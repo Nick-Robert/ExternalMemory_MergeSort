@@ -1,3 +1,10 @@
+/*
+    262144 1
+    268435456 1
+    1342177280 1
+    2684354560 1
+    5368709120 1
+*/
 #include <stdio.h>      
 #include <stdlib.h>     
 #include <time.h>       
@@ -38,7 +45,7 @@ return_vals write_file(const unsigned long long int file_size, const int bufsize
         return write_return;
     }
     else {
-        unsigned int next_x1 = rand(), next_x2 = rand(), next_x3 = rand(), next_x4 = rand();
+        unsigned int next_x1 = rand(), next_x2 = rand(), next_x3 = rand(), next_x4 = rand(), next_x5 = rand(), next_x6 = rand(), next_x7 = rand(), next_x8 = rand()/*, next_x9 = rand(), next_x10 = rand(), next_x11 = rand(), next_x12 = rand(), next_x13 = rand(), next_x14 = rand(), next_x15 = rand(), next_x16 = rand()*/;
         const unsigned int a = 214013;
         // const unsigned int m = 4096*4;
         const unsigned int c = 2531011;
@@ -47,7 +54,7 @@ return_vals write_file(const unsigned long long int file_size, const int bufsize
             // populate buffer - utilizes the Linear Congruential Generator method
             // https://en.wikipedia.org/wiki/Linear_congruential_generator
             start = std::chrono::system_clock::now();
-            for (int i = 0; i < bufsize; i+=4) {
+            for (int i = 0; i < bufsize; i+=8) {
                 next_x1 = (a * next_x1 + c);
                 buffer_aligned[i] = next_x1;
 
@@ -59,6 +66,42 @@ return_vals write_file(const unsigned long long int file_size, const int bufsize
 
                 next_x4 = (a * next_x4 + c);
                 buffer_aligned[i + 3] = next_x4;
+
+                next_x5 = (a * next_x5 + c);
+                buffer_aligned[i + 4] = next_x5;
+
+                next_x6 = (a * next_x6 + c);
+                buffer_aligned[i + 5] = next_x6;
+
+                next_x7 = (a * next_x7 + c);
+                buffer_aligned[i + 6] = next_x7;
+
+                next_x8 = (a * next_x8 + c);
+                buffer_aligned[i + 7] = next_x8;
+
+                /*next_x9 = (a * next_x9 + c);
+                buffer_aligned[i + 8] = next_x9;
+
+                next_x10 = (a * next_x10 + c);
+                buffer_aligned[i + 9] = next_x10;
+
+                next_x11 = (a * next_x11 + c);
+                buffer_aligned[i + 10] = next_x11;
+
+                next_x12 = (a * next_x12 + c);
+                buffer_aligned[i + 11] = next_x12;
+
+                next_x13 = (a * next_x13 + c);
+                buffer_aligned[i + 12] = next_x13;
+
+                next_x14 = (a * next_x14 + c);
+                buffer_aligned[i + 13] = next_x14;
+
+                next_x15 = (a * next_x15 + c);
+                buffer_aligned[i + 14] = next_x15;
+
+                next_x16 = (a * next_x16 + c);
+                buffer_aligned[i + 15] = next_x16;*/
             }
             end = std::chrono::system_clock::now();
             duration = end - start;
@@ -87,10 +130,10 @@ return_vals write_file(const unsigned long long int file_size, const int bufsize
             write_duration += duration.count();
 
             number_written += num_bytes_written / sizeof(unsigned int);
-            /*if (debug) {
+            if (debug) {
                 std::cout << "  number_written = " << number_written << std::endl;
                 std::cout << "  bufsize = " << bufsize << std::endl;
-            }*/
+            }
         }
         if (debug)
         {
@@ -115,25 +158,20 @@ return_vals sort_file(const unsigned long long int file_size, const int bufsize,
     return_vals sort_return = { 0 };
     std::chrono::time_point<std::chrono::high_resolution_clock> start, end;
     std::chrono::duration<double> duration;
-    //int* buffer = new int[bufsize];
-    unsigned int* buffer = (unsigned int*)_aligned_malloc(bufsize * 4, bytes_per_sector);
-    unsigned long long int written = 0;
-    unsigned long long int number_read = 0;
-    double sort_duration = 0;
-    double read_duration = 0;
-    LARGE_INTEGER num_bytes_written{};
-    num_bytes_written.QuadPart = 0;
-    int used_buf = bufsize;
+    unsigned int* buffer = (unsigned int*)_aligned_malloc(static_cast<size_t>(bufsize) * 4, bytes_per_sector);
+    unsigned long long int written = 0, number_read = 0;
+    double sort_duration = 0, read_duration = 0;
+    LARGE_INTEGER num_bytes_written = { 0 };
 
-    HANDLE pfile = CreateFileA((LPCSTR)fname, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
-    HANDLE new_file = CreateFileA((LPCSTR)new_fname, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
+    HANDLE old_file = CreateFileA((LPCSTR)fname, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
+    HANDLE chunk_sorted_file = CreateFileA((LPCSTR)new_fname, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
 
-    if (pfile == INVALID_HANDLE_VALUE) {
+    if (old_file == INVALID_HANDLE_VALUE) {
         printf("__FUNCTION__sort_file(): Failed opening populated file with %d\n", GetLastError());
         sort_return.was_error = 1;
         return sort_return;
     }
-    else if (new_file == INVALID_HANDLE_VALUE) {
+    else if (chunk_sorted_file == INVALID_HANDLE_VALUE) {
         printf("__FUNCTION__sort_file(): Failed opening new file for sort output with %d\n", GetLastError());
         sort_return.was_error = 1;
         return sort_return;
@@ -143,7 +181,7 @@ return_vals sort_file(const unsigned long long int file_size, const int bufsize,
             // populate buffer
             start = std::chrono::high_resolution_clock::now();
             DWORD num_bytes_touched;
-            bool was_success = ReadFile(pfile, buffer, sizeof(unsigned int) * used_buf, &num_bytes_touched, NULL);
+            bool was_success = ReadFile(old_file, buffer, sizeof(unsigned int) * bufsize, &num_bytes_touched, NULL);
             end = std::chrono::high_resolution_clock::now();
             if (!(was_success)) {
                 printf("__FUNCTION__sort_file(): Failed reading from populated file with %d\n", GetLastError());
@@ -154,7 +192,6 @@ return_vals sort_file(const unsigned long long int file_size, const int bufsize,
             read_duration = read_duration + duration.count();
             number_read = number_read + num_bytes_touched / sizeof(unsigned int);
 
-
             // sort the buffer and get time info
             start = std::chrono::high_resolution_clock::now();
             std::sort(buffer, buffer + bufsize);
@@ -162,7 +199,7 @@ return_vals sort_file(const unsigned long long int file_size, const int bufsize,
             duration = end - start;
             sort_duration = sort_duration + duration.count();
 
-            was_success = WriteFile(new_file, buffer, sizeof(unsigned int) * used_buf, &num_bytes_touched, NULL);
+            was_success = WriteFile(chunk_sorted_file, buffer, sizeof(unsigned int) * bufsize, &num_bytes_touched, NULL);
             if (!(was_success)) {
                 printf("__FUNCTION__sort_file(): Failed writing to new file for sort output with %d\n", GetLastError());
                 sort_return.was_error = 1;
@@ -171,14 +208,14 @@ return_vals sort_file(const unsigned long long int file_size, const int bufsize,
             num_bytes_written.QuadPart = num_bytes_written.QuadPart + num_bytes_touched;
             written = written + num_bytes_touched / sizeof(unsigned int);
 
-            /*if (debug) {
+            if (debug) {
                 std::cout << "  file_size = " << file_size << std::endl;
                 std::cout << "  num_bytes_touched = " << num_bytes_touched << std::endl;
                 std::cout << "  number_read = " << number_read << std::endl;
                 std::cout << "  written = " << written << std::endl;
                 std::cout << "  num_bytes_written.QuadPart = " << num_bytes_written.QuadPart << std::endl;
                 std::cout << "  bufsize = " << bufsize << std::endl;
-            }*/
+            }
         }
         if (debug)
         {
@@ -189,8 +226,8 @@ return_vals sort_file(const unsigned long long int file_size, const int bufsize,
 
     _aligned_free(buffer);
     buffer = nullptr;
-    CloseHandle(pfile);
-    CloseHandle(new_file);
+    CloseHandle(old_file);
+    CloseHandle(chunk_sorted_file);
 
     sort_return.number_elements_touched = number_read;
     sort_return.sort_duration = sort_duration;
@@ -267,6 +304,7 @@ int main(int argc, char** argv)
     double total_generate_time = 0;
     double total_write_time = 0;
     double total_sort_time = 0;
+    double total_read_time = 0;
 
     srand(time(0));
     for (int i = 0; i < num_runs; i++) {
@@ -281,8 +319,8 @@ int main(int argc, char** argv)
             std::cout << "Number of bytes written: " << write_return.number_elements_touched << std::endl;
         }
 
-        total_generate_time = total_generate_time + write_return.generation_duration;
-        total_write_time = total_write_time + write_return.write_duration;
+        total_generate_time += write_return.generation_duration;
+        total_write_time += write_return.write_duration;
 
         if (TEST_SORT)
         {
@@ -290,19 +328,22 @@ int main(int argc, char** argv)
             if (sort_return.was_error == 1) {
                 return 1;
             }
-            total_sort_time = total_sort_time + sort_return.sort_duration;
+            total_sort_time += sort_return.sort_duration;
+            total_read_time += sort_return.read_duration;
         }
     }
 
     std::cout << std::endl;
-    std::cout << "Averages over " << num_runs << " files" << std::endl;
+    std::cout << "Averages over " << num_runs << " runs" << std::endl;
     std::cout << "  Generation time: " << total_generate_time / num_runs << " s" << std::endl;
     std::cout << "  Generation rate: " << FILE_SIZE * num_runs / (total_generate_time * 1e6) << " million keys/s" << std::endl;
+    std::cout << "  Write time:      " << total_write_time / num_runs << " s" << std::endl;
+    std::cout << "  Write rate:      " << FILE_SIZE * num_runs * sizeof(unsigned int) / (total_write_time * 1e6) << " MB/s" << std::endl;
     std::cout << "  Sort time:       " << total_sort_time / num_runs << " s" << std::endl;
     std::cout << "  Sort rate:       " << FILE_SIZE * num_runs * sizeof(unsigned int) / (total_sort_time * 1e6) << " MB/s" << std::endl;
     std::cout << "  Sort rate:       " << FILE_SIZE * num_runs / (total_sort_time * 1e6) << " million keys/s" << std::endl;
-    std::cout << "  Write time:      " << total_write_time / num_runs << " s" << std::endl;
-    std::cout << "  Write rate:      " << FILE_SIZE * num_runs * sizeof(unsigned int) / (total_write_time * 1e6) << " MB/s" << std::endl;
+    std::cout << "  Read time:       " << total_read_time / num_runs << " s" << std::endl;
+    std::cout << "  Read rate:       " << FILE_SIZE * num_runs * sizeof(unsigned int) / (total_read_time * 1e6) << " MB/s" << std::endl;
 
     return 0;
 }
