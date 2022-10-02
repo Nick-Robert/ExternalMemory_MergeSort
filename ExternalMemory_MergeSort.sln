@@ -5,6 +5,8 @@ VisualStudioVersion = 17.3.32901.215
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ExternalMemory_MergeSort", "ExternalMemory_MergeSort\ExternalMemory_MergeSort.vcxproj", "{299EE3A1-9DD4-4664-B446-319E9C3A595C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "output_files", "output_files", "{1DDFF5C1-DDB3-40D7-A5BE-C4FB62D0C7D5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
