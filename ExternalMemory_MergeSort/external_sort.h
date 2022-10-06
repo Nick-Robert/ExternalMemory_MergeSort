@@ -7,7 +7,8 @@ class external_sort
     unsigned long long int FILE_SIZE;
     unsigned int BUFFER_SIZE;
     char *fname;
-    char *sorted_fname;
+    char *chunk_sorted_fname;
+    char *full_sorted_fname;
 
     bool TEST_SORT = false;
     bool GIVE_VALS = false;
@@ -24,16 +25,16 @@ class external_sort
     double read_duration;
 
     // validation vals
-    int num_runs = 1;
-    double total_generate_time = 0;
-    double total_write_time = 0;
-    double total_sort_time = 0;
-    double total_read_time = 0;
+    int num_runs;
+    double total_generate_time;
+    double total_write_time;
+    double total_sort_time;
+    double total_read_time;
 
 
 public:
     // constructor
-    external_sort();
+    external_sort(unsigned long long int _FILE_SIZE, unsigned int _BUFFER_SIZE, char _fname[], char _chunk_sorted_fname[], char _full_sorted_fname[], unsigned long _bytes_per_sector, unsigned long _num_free_sectors, int _num_runs = 1, bool _TEST_SORT = false, bool _GIVE_VALS = false, bool _DEBUG = false);
 
     int write_file();
 
@@ -41,7 +42,7 @@ public:
 
     int merge_sort();
 
-    int print_metrics();
+    void print_metrics();
 
     int generate_averages();
 };
