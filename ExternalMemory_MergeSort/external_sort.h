@@ -22,7 +22,6 @@ class external_sort
     double write_duration;
     double sort_duration;
     double read_duration;
-    int was_error;
 
     // validation vals
     int num_runs = 1;
@@ -34,9 +33,17 @@ class external_sort
 
 public:
     // constructor
-	external_sort() {
+    external_sort();
 
-	}
+    int write_file();
+
+    int sort_file();
+
+    int merge_sort();
+
+    int print_metrics();
+
+    int generate_averages();
 };
 
 #endif
