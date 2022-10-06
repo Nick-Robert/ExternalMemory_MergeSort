@@ -128,9 +128,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="driver.cpp" />
+    <ClCompile Include="external_sort.cpp" />
     <ClCompile Include="MinHeap.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="external_sort.h" />
     <ClInclude Include="MinHeap.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
