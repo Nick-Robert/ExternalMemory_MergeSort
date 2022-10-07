@@ -1,6 +1,5 @@
 #include "MinHeap.h"
 
-
 MinHeap::MinHeap(MinHeapNode a[], int size) : heap_size{ size }, harr{ a }
 {
 	int i = (heap_size - 1) / 2;
@@ -30,4 +29,12 @@ void MinHeap::MinHeapify(int i)
 		swap(&harr[i], &harr[smallest]);
 		MinHeapify(smallest);
 	}
+}
+
+
+void swap(MinHeapNode* x, MinHeapNode* y)
+{
+	MinHeapNode temp = *x;
+	*x = *y;
+	*y = temp;
 }

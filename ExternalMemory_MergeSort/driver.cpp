@@ -63,7 +63,7 @@ int main(int argc, char** argv)
         printf("\n");
     }
     int num_runs = 1;
-    external_sort extsrt(FILE_SIZE, BUFFER_SIZE, fname, chunk_sorted_fname, full_sorted_fname, bytes_per_sector, num_free_sectors, num_runs, TEST_SORT, GIVE_VALS, DEBUG);
+    external_sort extsrt(FILE_SIZE, BUFFER_SIZE, fname, chunk_sorted_fname, full_sorted_fname, bytes_per_sector, num_runs, TEST_SORT, GIVE_VALS, DEBUG);
     int was_fail = extsrt.generate_averages();
     if (was_fail)
     {

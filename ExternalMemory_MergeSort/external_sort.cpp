@@ -1,9 +1,10 @@
-#include "external_sort.h"
 #include "windows.h"
 #include <stdio.h>      
 #include <stdlib.h>  
 #include <algorithm>
 #include <time.h>
+#include "external_sort.h"
+#include "MinHeap.h"
 
 
 #define CREATE_VAR1(X,Y) X##Y 
@@ -14,7 +15,7 @@
     buffer_aligned[i + k] = next##k;            \
 
 
-external_sort::external_sort(unsigned long long int _FILE_SIZE, unsigned int _BUFFER_SIZE, char _fname[], char _chunk_sorted_fname[], char _full_sorted_fname[], unsigned long _bytes_per_sector, unsigned long _num_free_sectors, int _num_runs, bool _TEST_SORT, bool _GIVE_VALS, bool _DEBUG) : FILE_SIZE{ _FILE_SIZE }, BUFFER_SIZE{ _BUFFER_SIZE }, fname{ _fname }, chunk_sorted_fname{ _chunk_sorted_fname }, full_sorted_fname{ _full_sorted_fname }, TEST_SORT{ _TEST_SORT }, GIVE_VALS{ _GIVE_VALS }, DEBUG{ _DEBUG }, bytes_per_sector{ _bytes_per_sector }, num_free_sectors{ _num_free_sectors }, num_runs{ _num_runs } 
+external_sort::external_sort(unsigned long long int _FILE_SIZE, unsigned int _BUFFER_SIZE, char _fname[], char _chunk_sorted_fname[], char _full_sorted_fname[], unsigned long _bytes_per_sector, int _num_runs, bool _TEST_SORT, bool _GIVE_VALS, bool _DEBUG) : FILE_SIZE{ _FILE_SIZE }, BUFFER_SIZE{ _BUFFER_SIZE }, fname{ _fname }, chunk_sorted_fname{ _chunk_sorted_fname }, full_sorted_fname{ _full_sorted_fname }, TEST_SORT{ _TEST_SORT }, GIVE_VALS{ _GIVE_VALS }, DEBUG{ _DEBUG }, bytes_per_sector{ _bytes_per_sector }, num_runs{ _num_runs } 
 {
     this->total_generate_time = 0;
     this->total_write_time = 0;
@@ -82,7 +83,7 @@ int external_sort::write_file()
             generation_duration += end.QuadPart - start.QuadPart;
 
             if (this->GIVE_VALS) {
-                for (int i = 0; i < this->BUFFER_SIZE; i++) {
+                for (unsigned int i = 0; i < this->BUFFER_SIZE; i++) {
                     if (i < 7) {
                         printf("buffer_aligned[%d] = %u\n", i, buffer_aligned[i]);
                     }
@@ -100,7 +101,7 @@ int external_sort::write_file()
                 printf("%s: Error write end time with code %d\n", __FUNCTION__, GetLastError());
             }
             if (!(was_success)) {
-                printf("__FUNCTION__write_file(): Failed writing to file with %d\n", GetLastError());
+                printf("%s: Failed writing to file with %d\n", __FUNCTION__, GetLastError());
                 return 1;
             }
             write_duration += end.QuadPart - start.QuadPart;
@@ -145,11 +146,11 @@ int external_sort::sort_file()
     HANDLE chunk_sorted_file = CreateFileA((LPCSTR)this->chunk_sorted_fname, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
 
     if (old_file == INVALID_HANDLE_VALUE) {
-        printf("__FUNCTION__sort_file(): Failed opening populated file with %d\n", GetLastError());
+        printf("%s: Failed opening populated file with %d\n", __FUNCTION__, GetLastError());
         return 1;
     }
     else if (chunk_sorted_file == INVALID_HANDLE_VALUE) {
-        printf("__FUNCTION__sort_file(): Failed opening new file for sort output with %d\n", GetLastError());
+        printf("%s: Failed opening new file for sort output with %d\n", __FUNCTION__, GetLastError());
         return 1;
     }
     else {
@@ -166,7 +167,7 @@ int external_sort::sort_file()
                 printf("%s: Error read end time with code %d\n", __FUNCTION__, GetLastError());
             }
             if (!(was_success)) {
-                printf("__FUNCTION__sort_file(): Failed reading from populated file with %d\n", GetLastError());
+                printf("%s: Failed reading from populated file with %d\n", __FUNCTION__, GetLastError());
                 return 1;
             }
             read_duration += end.QuadPart - start.QuadPart;
@@ -186,7 +187,7 @@ int external_sort::sort_file()
 
             was_success = WriteFile(chunk_sorted_file, buffer, sizeof(unsigned int) * this->BUFFER_SIZE, &num_bytes_touched, NULL);
             if (!(was_success)) {
-                printf("__FUNCTION__sort_file(): Failed writing to new file for sort output with %d\n", GetLastError());
+                printf("%s: Failed writing to new file for sort output with %d\n", __FUNCTION__, GetLastError());
                 return 1;
             }
             num_bytes_written.QuadPart = num_bytes_written.QuadPart + num_bytes_touched;
@@ -222,7 +223,43 @@ int external_sort::sort_file()
 
 int external_sort::merge_sort()
 {
+    // STEPS
+    //      1) Determine how many chunks were made and how much memory to allocate for each chunk
+    //              Do we assume the system has 1 GB of RAM, parameter in class 
+    //              # chunks = FILE_SIZE / BUFFER_SIZE
+    //      2) The number of vals from each chunk to initialize the array is 
+    //              #_of_vals_each = BUFFER_SIZE / num_chunks
+    //      3) Create an array of size 1 GB and populate it with the first val from each chunk
+    //              Problem: array needs to store MinHeapNodes, which are size 12 vs unsigned int size 4
+    //      4) Insert first array into MinHeap, pop minimum's val to another buffer of BUFFER_SIZE. Insert next value from the same chunk
+    //      5) When second buffer is full, append those values to the new file
+    //      6) Repeat steps 3-5 until first array is empty
 
+
+    unsigned long long num_chunks = this->FILE_SIZE / this->BUFFER_SIZE;
+    if (FILE_SIZE % BUFFER_SIZE != 0)
+    {
+        printf("%s: FILE_SIZE % BUFFER_SIZE == 0 expected, FILE_SIZE = %llu, BUFFER_SIZE = %u\n", __FUNCTION__, this->FILE_SIZE, this->BUFFER_SIZE);
+    }
+    printf("FILE_SIZE / BUFFER_SIZE = %llu\n", this->FILE_SIZE / this->BUFFER_SIZE);
+    printf("BUFFER_SIZE / num_chunks = %llu\n", this->BUFFER_SIZE / num_chunks);
+
+    /*HANDLE chunk_sorted_file = CreateFileA((LPCSTR)this->chunk_sorted_fname, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
+    HANDLE full_sorted_file = CreateFileA((LPCSTR)this->full_sorted_fname, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
+    if (chunk_sorted_file == INVALID_HANDLE_VALUE) {
+        printf("%s: Failed opening populated file with %d\n", __FUNCTION__, GetLastError());
+        return 1;
+    }
+    else if (full_sorted_file == INVALID_HANDLE_VALUE) {
+        printf("%s: Failed opening new file for mergesort output with %d\n", __FUNCTION__, GetLastError());
+        return 1;
+    }*/
+
+    printf("sizeof(MinHeapNode) = %u\n", sizeof(MinHeapNode));
+
+
+    /*CloseHandle(chunk_sorted_file);
+    CloseHandle(full_sorted_file);*/
     return 0;
 }
 
@@ -266,6 +303,7 @@ int external_sort::generate_averages()
             this->total_sort_time += this->sort_duration;
             this->total_read_time += this->read_duration;
         }
+        merge_sort();
     }
     return 0;
 }

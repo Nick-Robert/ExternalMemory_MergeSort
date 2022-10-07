@@ -15,7 +15,6 @@ class external_sort
     bool DEBUG = false;
 
     unsigned long bytes_per_sector;
-    unsigned long num_free_sectors;
 
     // old return_vals struct values
     unsigned long long int number_elements_touched;
@@ -34,7 +33,7 @@ class external_sort
 
 public:
     // constructor
-    external_sort(unsigned long long int _FILE_SIZE, unsigned int _BUFFER_SIZE, char _fname[], char _chunk_sorted_fname[], char _full_sorted_fname[], unsigned long _bytes_per_sector, unsigned long _num_free_sectors, int _num_runs = 1, bool _TEST_SORT = false, bool _GIVE_VALS = false, bool _DEBUG = false);
+    external_sort(unsigned long long int _FILE_SIZE, unsigned int _BUFFER_SIZE, char _fname[], char _chunk_sorted_fname[], char _full_sorted_fname[], unsigned long _bytes_per_sector, int _num_runs = 1, bool _TEST_SORT = false, bool _GIVE_VALS = false, bool _DEBUG = false);
 
     int write_file();
 

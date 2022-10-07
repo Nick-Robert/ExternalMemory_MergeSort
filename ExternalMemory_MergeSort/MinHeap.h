@@ -1,16 +1,17 @@
 #ifndef MINHEAP_H
 #define MINHEAP_H
-#include <utility>
+
 
 struct MinHeapNode
 {
 	unsigned int val;
 
 	// says which chunk the index comes from
-	int chunk_index;
+	unsigned int chunk_index;
 	// where in the chunk is the current value from
-	int val_index;
+	unsigned int val_index;
 };
+
 
 class MinHeap
 {
@@ -35,13 +36,9 @@ public:
 	}
 };
 
+
 // utility functions
-void swap(MinHeapNode* x, MinHeapNode* y)
-{
-	MinHeapNode temp = *x;
-	*x = *y;
-	*y = temp;
-}
+extern void swap(MinHeapNode* x, MinHeapNode* y);
 
 
 #endif
