@@ -4,15 +4,15 @@
 class external_sort
 {
     // core values
-    unsigned long long int FILE_SIZE;
-    unsigned int BUFFER_SIZE;
+    unsigned long long int file_size;
+    unsigned int buffer_size;
     char *fname;
     char *chunk_sorted_fname;
     char *full_sorted_fname;
 
-    bool TEST_SORT = false;
-    bool GIVE_VALS = false;
-    bool DEBUG = false;
+    bool test_sort = false;
+    bool give_vals = false;
+    bool debug = false;
 
     unsigned long bytes_per_sector;
 
@@ -33,7 +33,7 @@ class external_sort
 
 public:
     // constructor
-    external_sort(unsigned long long int _FILE_SIZE, unsigned int _BUFFER_SIZE, char _fname[], char _chunk_sorted_fname[], char _full_sorted_fname[], unsigned long _bytes_per_sector, int _num_runs = 1, bool _TEST_SORT = false, bool _GIVE_VALS = false, bool _DEBUG = false);
+    external_sort(unsigned long long int _FILE_SIZE, char _fname[], char _chunk_sorted_fname[], char _full_sorted_fname[], int _num_runs = 1, bool _TEST_SORT = false, bool _GIVE_VALS = false, bool _DEBUG = false);
 
     int write_file();
 
