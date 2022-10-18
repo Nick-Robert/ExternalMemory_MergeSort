@@ -22,6 +22,11 @@ class external_sort
     double write_duration;
     double sort_duration;
     double read_duration;
+    double merge_duration;
+    double load_duration;
+    double merge_read_duration;
+    double heap_duration;
+    double merge_write_duration;
 
     // validation vals
     int num_runs;
@@ -29,6 +34,11 @@ class external_sort
     double total_write_time;
     double total_sort_time;
     double total_read_time;
+    double total_merge_time;
+    double total_load_time;
+    double total_merge_read_time;
+    double total_heap_time;
+    double total_merge_write_time;
 
 
 public:

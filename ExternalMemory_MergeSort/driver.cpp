@@ -1,6 +1,11 @@
 /*
+    512 1
     262144 1
+    524288
+    2883584 1
     268435456 1
+    268697600 1
+    1073741824 1
     1342177280 1
     2684354560 1
     5368709120 1
@@ -30,7 +35,7 @@ int main(int argc, char** argv)
     }
     unsigned long long int FILE_SIZE = strtoull(argv[1], nullptr, 10);
 
-    unsigned int BUFFER_SIZE = (1<<20) / sizeof(unsigned int);
+    //unsigned int BUFFER_SIZE = (1<<20) / sizeof(unsigned int);
     char fname[] = "output_files\\test.bin";
     char chunk_sorted_fname[] = "output_files\\sorted_test.bin";
     char full_sorted_fname[] = "output_files\\merge_test.bin";
@@ -57,9 +62,9 @@ int main(int argc, char** argv)
     if (DEBUG)
     {
         printf("FILE_SIZE = %llu\n", FILE_SIZE);
-        printf("BUFFER_SIZE = %u\n", BUFFER_SIZE);
+        //printf("BUFFER_SIZE = %u\n", BUFFER_SIZE);
         printf("BYTES_PER_SECTOR = %lu\n", bytes_per_sector);
-        printf("FILE_SIZE % BYTES_PER_SECTOR = %llu\n", FILE_SIZE % (unsigned long long)bytes_per_sector);
+        printf("FILE_SIZE mod BYTES_PER_SECTOR = %llu\n", FILE_SIZE % (unsigned long long)bytes_per_sector);
         printf("\n");
     }
     int num_runs = 1;
