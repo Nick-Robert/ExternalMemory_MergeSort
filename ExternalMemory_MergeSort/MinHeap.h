@@ -9,11 +9,11 @@ struct MinHeapNode
 	// says which chunk the index comes from
 	unsigned int chunk_index;
 	// where in the chunk is the current value from
-	unsigned int val_index;
+	//unsigned int val_index;
 	// the current last valid index of the chunk
-	unsigned int last_val_index;
+	//unsigned int last_val_index;
 	// how many times this chunk has gathered new values
-	unsigned int num_times_pulled;
+	//unsigned int num_times_pulled;
 };
 
 

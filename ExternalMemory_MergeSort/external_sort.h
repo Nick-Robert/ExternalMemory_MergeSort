@@ -2,27 +2,45 @@
 #define EXTERNALSORT_H
 
 struct state_vars {
-    // pointer to the start of this chunk
-    unsigned int* start_offset;
-    // pointer to the end of this chunk
-    unsigned int* end_offset;
-    // pointer to the current position in this chunk
-    unsigned int* bufpos;
-    // size of this chunk
-    INT64 bufsize;
-    // the start of the next seek
+    /*  deals with file  */
+    // in bytes
+    unsigned long long start_offset;
+    // in bytes
+    unsigned long long end_offset;
+    // in bytes
     INT64 seek_offset;
-//    // size of this chunk
-//    INT64 chunk_size;
-    // pointer to the start of this chunk
-    INT64 chunk_ptr;
+    // in bytes
+    unsigned long long chunk_ptr;
+
+    // in number of vals
+    INT64 chunk_size;
+
+    /*  deals with buffer  */
+    // pointer 
+    unsigned int* bufpos;
+    // in number of vals
+    INT64 bufsize;
+
+    void print() const {
+        printf("File vals\n");
+        printf("    start_offset = %llu\n", start_offset);
+        printf("    end_offset = %llu\n", end_offset);
+        printf("    seek_offset = %llu\n", seek_offset);
+        printf("    chunk_ptr = %llu\n", chunk_ptr);
+        printf("    chunk_size = %llu\n", chunk_size);
+        printf("Buffer vals\n");
+        printf("    bufpos = %u\n", bufpos);
+        printf("    bufsize = %llu\n", bufsize);
+    }
 };
 
 class external_sort
 {
     // core values
     unsigned long long int file_size;
-    unsigned int buffer_size;
+    LARGE_INTEGER windows_fs;
+    unsigned int write_buffer_size;
+    unsigned long long int chunk_size;
     char *fname;
     char *chunk_sorted_fname;
     char *full_sorted_fname;
@@ -31,7 +49,9 @@ class external_sort
     bool give_vals = false;
     bool debug = false;
 
+    // mergesort values
     struct state_vars* state;
+    unsigned long long int mergesort_buffer_size;
 
     unsigned long bytes_per_sector;
 
