@@ -6,7 +6,10 @@
 #include <time.h>
 #include "external_sort.h"
 #include "MinHeap.h"
+#include <queue>
 #include <limits>
+
+using namespace std;
 
 
 #define CREATE_VAR1(X,Y) X##Y 
@@ -16,6 +19,11 @@
     next##k = a * next##k + c;                  \
     buffer_aligned[i + k] = next##k;            \
 
+struct my_lesser {
+    bool operator()(const MinHeapNode& x, const MinHeapNode& y) const {
+        return x.val > y.val;
+    }
+};
 
 external_sort::external_sort(unsigned long long int _FILE_SIZE, char _fname[], char _chunk_sorted_fname[], char _full_sorted_fname[],int _num_runs, bool _TEST_SORT, bool _GIVE_VALS, bool _DEBUG) 
     : file_size{ _FILE_SIZE }, fname{ _fname }, chunk_sorted_fname{ _chunk_sorted_fname }, full_sorted_fname{ _full_sorted_fname }, test_sort{ _TEST_SORT }, give_vals{ _GIVE_VALS }, debug{ _DEBUG }, num_runs{ _num_runs }
@@ -257,12 +265,6 @@ int external_sort::merge_sort()
         return 1;
     }
 
-    // some kind of similar logic may be needed when dealing with values that don't exactly align to 512 bytes as expected of this first iteration
-    //    the checks above ensure that everything lines up correctly so NO_BUFFERING properly works
-    /*while (vals_per_chunk % (512/sizeof(unsigned int)) != 0) {
-        vals_per_chunk -= 1;
-    }*/
-
     if (this->debug) {
         printf("    FILE_SIZE = %llu\n", this->file_size);
         printf("    FILE_SIZE*sizeof(unsigned int) = %llu\n", this->file_size * sizeof(unsigned int));
@@ -325,17 +327,25 @@ int external_sort::merge_sort()
     }
 
     // 2)  Create MinHeapNodes with the first val from every chunk(now taken from the 1GB array) and insert into heap array
+    this->state = new state_vars[num_chunks];
+
     QueryPerformanceCounter(&start);
     for (int i = 0; i < num_chunks; i++) {
         heap_buffer[i].val = raw_num_buffer[i * vals_per_chunk];
         heap_buffer[i].chunk_index = i;
-        heap_buffer[i].val_index = 0;
+        this->state[i].start_offset = raw_num_buffer + i * vals_per_chunk;
+        /*heap_buffer[i].val_index = 0;
         heap_buffer[i].num_times_pulled = 1;
-        heap_buffer[i].last_val_index = vals_per_chunk - 1;
+        heap_buffer[i].last_val_index = vals_per_chunk - 1;*/
     }
     
     // 3)  Create MinHeap from the array
-    MinHeap hp(heap_buffer, num_chunks);
+    //MinHeap hp(heap_buffer, num_chunks);
+    priority_queue <MinHeapNode, vector<MinHeapNode>, my_lesser > hp;
+    for (int i = 0; i < num_chunks; i++) {
+        hp.push(heap_buffer[i]);
+    }
+
     QueryPerformanceCounter(&end);
 
     heap_duration += end.QuadPart - start.QuadPart;
@@ -348,7 +358,8 @@ int external_sort::merge_sort()
     unsigned curr_sorted_buf_size = 0;
     while (count < this->file_size) {
         QueryPerformanceCounter(&merge_start);
-        MinHeapNode root = hp.getMin();
+        MinHeapNode root = hp.top();
+        hp.pop();
         sorted_num_buffer[curr_sorted_buf_size] = root.val;
         root.val = raw_num_buffer[root.chunk_index * vals_per_chunk + root.val_index+1];
         root.val_index += 1;

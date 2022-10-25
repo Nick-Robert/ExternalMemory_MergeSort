@@ -1,6 +1,23 @@
 #ifndef EXTERNALSORT_H
 #define EXTERNALSORT_H
 
+struct state_vars {
+    // pointer to the start of this chunk
+    unsigned int* start_offset;
+    // pointer to the end of this chunk
+    unsigned int* end_offset;
+    // pointer to the current position in this chunk
+    unsigned int* bufpos;
+    // size of this chunk
+    INT64 bufsize;
+    // the start of the next seek
+    INT64 seek_offset;
+//    // size of this chunk
+//    INT64 chunk_size;
+    // pointer to the start of this chunk
+    INT64 chunk_ptr;
+};
+
 class external_sort
 {
     // core values
@@ -13,6 +30,8 @@ class external_sort
     bool test_sort = false;
     bool give_vals = false;
     bool debug = false;
+
+    struct state_vars* state;
 
     unsigned long bytes_per_sector;
 
