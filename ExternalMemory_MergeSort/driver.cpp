@@ -63,7 +63,7 @@ int main(int argc, char** argv)
     {
         printf("FILE_SIZE = %llu\n", FILE_SIZE);
         //printf("BUFFER_SIZE = %u\n", BUFFER_SIZE);
-        printf("BYTES_PER_SECTOR = %lu\n", bytes_per_sector);
+        printf("bytes_per_sector = %lu\n", bytes_per_sector);
         printf("FILE_SIZE mod BYTES_PER_SECTOR = %llu\n", FILE_SIZE % (unsigned long long)bytes_per_sector);
         printf("\n");
     }
@@ -78,6 +78,22 @@ int main(int argc, char** argv)
     else {
         extsrt.print_metrics();
     }
+
+    was_fail = extsrt.shallow_validate();
+    if (was_fail)
+    {
+        printf("Failed in shallow validate");
+        return 1;
+    }
+
+    /*
+    was_fail = extsrt.deep_validate();
+    if (was_fail)
+    {
+        printf("Failed in deep validate");
+        return 1;
+    }
+    //*/
 
     return 0;
 }

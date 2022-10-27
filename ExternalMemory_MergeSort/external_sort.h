@@ -18,8 +18,12 @@ struct state_vars {
     /*  deals with buffer  */
     // pointer 
     unsigned int* bufpos;
+    // how many vals are currently in the buffer
+    INT64 curr_buflen;
     // in number of vals
     INT64 bufsize;
+    // in number of vals
+    INT64 nobuff_bufsize;
 
     void print() const {
         printf("File vals\n");
@@ -29,8 +33,9 @@ struct state_vars {
         printf("    chunk_ptr = %llu\n", chunk_ptr);
         printf("    chunk_size = %llu\n", chunk_size);
         printf("Buffer vals\n");
-        printf("    bufpos = %u\n", bufpos);
+        printf("    bufpos = %llu\n", bufpos);
         printf("    bufsize = %llu\n", bufsize);
+        printf("    nobuff_bufsize = %llu\n", nobuff_bufsize);
     }
 };
 
@@ -93,6 +98,10 @@ public:
     void print_metrics();
 
     int generate_averages();
+
+    int shallow_validate();
+
+    int deep_validate();
 };
 
 #endif
