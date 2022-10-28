@@ -86,7 +86,7 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    /*
+    
     was_fail = extsrt.deep_validate();
     if (was_fail)
     {

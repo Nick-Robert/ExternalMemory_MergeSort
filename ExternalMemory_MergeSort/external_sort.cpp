@@ -35,7 +35,7 @@ external_sort::external_sort(unsigned long long int _FILE_SIZE, char _fname[], c
     this->windows_fs.QuadPart = sizeof(unsigned int) * _FILE_SIZE;
     this->write_buffer_size = (static_cast<unsigned long long>(1) << 20) / sizeof(unsigned int);
     // lowest this can be is (static_cast<unsigned long long>(1) << 9) / sizeof(unsigned int); since it results in 512 bytes
-    this->chunk_size = (static_cast<unsigned long long>(1) << 30) / sizeof(unsigned int);
+    this->chunk_size = (static_cast<unsigned long long>(1) << 10) / sizeof(unsigned int);
     this->total_generate_time = 0;
     this->total_write_time = 0;
     this->total_sort_time = 0;
@@ -45,7 +45,9 @@ external_sort::external_sort(unsigned long long int _FILE_SIZE, char _fname[], c
     this->total_merge_read_time = 0;
     this->total_heap_time = 0;
     this->total_merge_write_time = 0;
-    this->mergesort_buffer_size = (static_cast<unsigned long long>(1) << 30) / sizeof(unsigned int);
+    //this->mergesort_buffer_size = (static_cast<unsigned long long>(1) << 10) / sizeof(unsigned int);
+    this->mergesort_buffer_size = chunk_size;
+    // chunk size must be == mergesort_buffer_size
 
 
     BOOL succeeded = GetDiskFreeSpaceA(NULL, NULL, &this->bytes_per_sector, NULL, NULL);
@@ -61,7 +63,8 @@ int external_sort::write_file()
     //if (this->debug) {
         printf("\n%s\n", __FUNCTION__);
     //}
-    srand((unsigned int)time(0));
+    //srand((unsigned int)time(0));
+    srand(0);
     LARGE_INTEGER start = { 0 }, end = { 0 }, freq = { 0 };
 
     QueryPerformanceFrequency(&freq);
@@ -158,21 +161,7 @@ int external_sort::write_file()
                 printf("%s: Failed writing to file with %d\n", __FUNCTION__, GetLastError());
                 return 1;
             }
-            if (new_num_vals_to_write != num_vals_to_write) {
-                CloseHandle(pfile);
-                LARGE_INTEGER before_sfp = { 0 };
-                before_sfp.QuadPart = this->windows_fs.QuadPart;
-                pfile = CreateFile(this->chunk_sorted_fname, GENERIC_WRITE, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-                if ( (SetFilePointer(pfile, this->windows_fs.LowPart, &this->windows_fs.HighPart, FILE_BEGIN)) == INVALID_SET_FILE_POINTER ) {
-                    printf("%s: Error with SetFilePointer with %d\n", __FUNCTION__, GetLastError());
-                    return 1;
-                }
-                if (!SetEndOfFile(pfile)) {
-                    printf("%s: Error with SetEndOfFile with %d\n", __FUNCTION__, GetLastError());
-                    return 1;
-                }
-                this->windows_fs.QuadPart = before_sfp.QuadPart;
-            }
+            
             write_duration += end.QuadPart - start.QuadPart;
             number_written += num_vals_to_write;
 
@@ -185,10 +174,24 @@ int external_sort::write_file()
             }
         }
     }
+    CloseHandle(pfile);
+    LARGE_INTEGER before_sfp = { 0 };
+    before_sfp.QuadPart = this->windows_fs.QuadPart;
+    pfile = CreateFile(this->fname, GENERIC_WRITE, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if ((SetFilePointer(pfile, this->windows_fs.LowPart, &this->windows_fs.HighPart, FILE_BEGIN)) == INVALID_SET_FILE_POINTER) {
+        printf("%s: Error with SetFilePointer with %d\n", __FUNCTION__, GetLastError());
+        return 1;
+    }
+    if (!SetEndOfFile(pfile)) {
+        printf("%s: Error with SetEndOfFile with %d\n", __FUNCTION__, GetLastError());
+        return 1;
+    }
+    CloseHandle(pfile);
+    this->windows_fs.QuadPart = before_sfp.QuadPart;
+
     _aligned_free(buffer);
     buffer = nullptr;
 
-    CloseHandle(pfile);
     this->number_elements_touched = number_written;
     this->generation_duration = generation_duration / freq.QuadPart;
     this->write_duration = write_duration / freq.QuadPart;
@@ -268,26 +271,27 @@ int external_sort::sort_file()
         std::sort(sort_buffer, sort_buffer + num_vals_to_read);
         QueryPerformanceCounter(&end);
         //if (this->give_vals) {
-            for (unsigned int i = 0; i < 2; i++) {
+            for (unsigned int i = 0; i < 2 && i < num_vals_to_read; i++) {
                 printf("buffer[%d] = %u\n", i, sort_buffer[i]);
             }
-            if (num_vals_to_read > 100) {
+            if (num_vals_to_read > 6) {
                 printf("buffer[%d] = %u\n", num_vals_to_read / 2 - 3, sort_buffer[num_vals_to_read / 2 - 3]);
                 printf("buffer[%d] = %u\n", num_vals_to_read / 2 - 2, sort_buffer[num_vals_to_read / 2 - 2]);
                 printf("buffer[%d] = %u\n", num_vals_to_read / 2 - 1, sort_buffer[num_vals_to_read / 2 - 1]);
                 printf("buffer[%d] = %u\n", num_vals_to_read / 2, sort_buffer[num_vals_to_read / 2]);
                 printf("buffer[%d] = %u\n", num_vals_to_read / 2 + 1, sort_buffer[num_vals_to_read / 2 + 1]);
             }
-            for (unsigned int i = num_vals_to_read - 2; i < num_vals_to_read; i++) {
+            /*for (unsigned int i = num_vals_to_read - 2; i < num_vals_to_read && i >= 0; i++) {
                 printf("buffer[%d] = %u\n", i, sort_buffer[i]);
-            }
+            }*/
         //}
         sort_duration += end.QuadPart - start.QuadPart;
 
         while (written < number_read) {
-            if (this->debug) {
-                printf("written = %lu\n", written);
-            }
+            //if (this->debug) {
+            printf("    written = %lu\n", written);
+            printf("    number_read = %lu\n", number_read);
+            //}
             //unsigned long num_bytes_to_write = (number_read % this->write_buffer_size == 0) ? (this->write_buffer_size) : ((written + this->write_buffer_size > number_read) ? (number_read % written) : (this->write_buffer_size));
             unsigned long num_vals_to_write = 0;
             unsigned long new_num_vals_to_write = 0;
@@ -307,7 +311,11 @@ int external_sort::sort_file()
                 num_vals_to_write = this->write_buffer_size;
                 new_num_vals_to_write = this->write_buffer_size;
             }
+            printf("    num_vals_to_write = %lu\n", num_vals_to_write);
+            printf("    new_num_vals_to_write = %lu\n", new_num_vals_to_write);
+
             was_success = WriteFile(chunk_sorted_file, sort_buffer + written, sizeof(unsigned int) * new_num_vals_to_write, &num_bytes_touched, NULL);
+            printf("    num_bytes_touched = %lu\n", num_bytes_touched);
             if (!(was_success)) {
                 printf("%s: Failed writing to new file for sort output with %d\n", __FUNCTION__, GetLastError());
                 return 1;
@@ -315,7 +323,11 @@ int external_sort::sort_file()
             if (num_vals_to_write != new_num_vals_to_write) {
                 CloseHandle(chunk_sorted_file);
                 chunk_sorted_file = CreateFile(this->chunk_sorted_fname, GENERIC_WRITE, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-                if ((SetFilePointer(chunk_sorted_file, this->windows_fs.LowPart, NULL/*&this->windows_fs.HighPart*/, FILE_BEGIN)) == INVALID_SET_FILE_POINTER) {
+                /*LARGE_INTEGER before_sfp = { 0 };
+                before_sfp.QuadPart = this->windows_fs.QuadPart;*/
+                DWORD num_moved = 0;
+                num_moved = SetFilePointer(chunk_sorted_file, this->windows_fs.LowPart, NULL/*&this->windows_fs.HighPart*/, FILE_BEGIN);
+                if (num_moved == INVALID_SET_FILE_POINTER) {
                     printf("%s: error in SetFilePointer with %d\n", __FUNCTION__, GetLastError());
                     return 1;
                 }
@@ -323,6 +335,7 @@ int external_sort::sort_file()
                     printf("%s: error in SetEndOfFile with %d\n", __FUNCTION__, GetLastError());
                     return 1;
                 }
+                //windows_fs.QuadPart = before_sfp.QuadPart;
             }
             
             num_bytes_written.QuadPart += num_bytes_touched;
@@ -433,6 +446,7 @@ int external_sort::merge_sort()
     // defines state's values for every chunk
     INT64 running_file_offset = 0;
     INT64 running_buf_offset = 0;
+
     for (int i = 0; i < num_chunks; i++) {
         if (i != num_chunks - 1 && this->file_size % this->chunk_size != 0) {
             this->state[i].chunk_size = this->chunk_size;
@@ -460,11 +474,11 @@ int external_sort::merge_sort()
         this->state[i].seek_offset = min(vals_per_chunk * sizeof(unsigned int), this->state[i].end_offset - this->state[i].start_offset);
 
         // how big a portion this chunk gets in the raw_num_buffer
-        this->state[i].bufsize = min((INT64)vals_per_chunk + 1, (INT64)(1 + (this->state[i].end_offset - this->state[i].start_offset) / sizeof(unsigned int)));
-        this->state[i].nobuff_bufsize = (static_cast<INT64>(this->state[i].bufsize - 1) + 127) & (~127);
+        this->state[i].bufsize = min((INT64)vals_per_chunk, (INT64)((this->state[i].end_offset - this->state[i].start_offset) / sizeof(unsigned int)));
+        this->state[i].nobuff_bufsize = (static_cast<INT64>(this->state[i].bufsize) + 127) & (~127);
 
         running_file_offset += this->state[i].chunk_size;
-        running_buf_offset += this->state[i].bufsize - 1;
+        running_buf_offset += this->state[i].bufsize;
         //if (this->debug) {
             printf("\ni = %d\n", i);
             state[i].print();
@@ -478,7 +492,7 @@ int external_sort::merge_sort()
     for (int i = 0; i < num_chunks; i++)
     {
         unsigned int* read_into_buffer = (unsigned int*)_aligned_malloc(this->state[i].nobuff_bufsize * sizeof(unsigned int), this->bytes_per_sector);
-        num_bytes_to_move.QuadPart = this->state[i].start_offset/* + this->state[i].seek_offset*/;
+        num_bytes_to_move.QuadPart = this->state[i].start_offset;
         LARGE_INTEGER aligned_bytes_to_move = { 0 };
         aligned_bytes_to_move.QuadPart = (num_bytes_to_move.QuadPart + 511) & (~511);
         if (num_bytes_to_move.QuadPart % 512 != 0) {
@@ -488,6 +502,7 @@ int external_sort::merge_sort()
             printf("  i = %d\n", i);
             printf("    num_bytes_to_move.QuadPart = %llu\n", num_bytes_to_move.QuadPart);
             printf("    aligned_bytes_to_move.QuadPart = %llu\n", aligned_bytes_to_move.QuadPart);
+            printf("    this->state[i].nobuff_bufsize = %llu\n", this->state[i].nobuff_bufsize);
         //}
         QueryPerformanceCounter(&end);
         load_duration += end.QuadPart - start.QuadPart;
@@ -508,12 +523,20 @@ int external_sort::merge_sort()
             return 1;
         }
         printf("    num_bytes_touched = %llu\n", num_bytes_touched);
-        printf("    (this->state[i].bufsize - 1) * sizeof(unsigned int) = %llu\n", (this->state[i].bufsize - 1) * sizeof(unsigned int));
-        memcpy(this->state[i].bufpos, read_into_buffer, (this->state[i].bufsize - 1) * sizeof(unsigned int));
+        printf("    num_moved = %lu\n\n", num_moved);
+        memcpy(this->state[i].bufpos, read_into_buffer, this->state[i].bufsize * sizeof(unsigned int));
         printf("    read_into_buffer[0] = %llu\n", raw_num_buffer[0]);
+        printf("    bufpos[0] = %llu\n", this->state[i].bufpos[0]);
+
         printf("    read_into_buffer[this->state[i].bufsize - 2] = %llu\n", raw_num_buffer[this->state[i].bufsize - 2]);
+        printf("    bufpos[this->state[i].bufsize - 2] = %llu\n", this->state[i].bufpos[this->state[i].bufsize - 2]);
+
         printf("    read_into_buffer[this->state[i].bufsize - 1] = %llu\n", raw_num_buffer[this->state[i].bufsize - 1]);
+        printf("    bufpos[this->state[i].bufsize - 1] = %llu\n", this->state[i].bufpos[this->state[i].bufsize - 1]);
+
         printf("    read_into_buffer[this->state[i].bufsize] = %llu\n", raw_num_buffer[this->state[i].bufsize]);
+        printf("    bufpos[this->state[i].bufsize] = %llu\n", this->state[i].bufpos[this->state[i].bufsize]);
+
         _aligned_free(read_into_buffer);
     }
 
@@ -559,11 +582,13 @@ int external_sort::merge_sort()
 
     unsigned sorted_buf_size = 0;
     QueryPerformanceCounter(&merge_start);
+    unsigned last_val = 0;
     while (mh.size()) {
         //printf("mh.size() = %u\n", mh.size());
         MinHeapNode root = mh.top();
         mh.pop();
         sorted_num_buffer[sorted_buf_size++] = root.val;
+        
         if (sorted_buf_size == this->write_buffer_size) {
             QueryPerformanceCounter(&start);
             bool was_success = WriteFile(full_sorted_file, sorted_num_buffer, sizeof(unsigned int) * this->write_buffer_size, &num_bytes_touched, NULL);
@@ -575,9 +600,16 @@ int external_sort::merge_sort()
             write_duration += end.QuadPart - start.QuadPart;
             sorted_buf_size = 0;
         }
+        
         //unsigned idx = root.chunk_index;
         state_vars* sv = &this->state[root.chunk_index];
         //printf(" sv->curr_buflen = %u\n", sv->curr_buflen);
+        if (root.val < last_val) {
+            printf("%s: next_val (%u) is less than last_val (%u) [IDX = %u]\n", __FUNCTION__, root.val, last_val, root.chunk_index);
+            printf("    sv->curr_buflen = %u\n", sv->curr_buflen);
+            return 1;
+        }
+        last_val = root.val;
         sv->curr_buflen++;
         if (this->debug) {
             printf("root.chunk_index = %u\n", root.chunk_index);
