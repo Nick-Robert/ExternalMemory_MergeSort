@@ -3,11 +3,13 @@ Notes:
 - Max file size that merge_sort can currently handle is (chunk_size)^2
     - This is since mergesort_buffer_size = chunk_size, and num_vals_per_chunk is defined as mergesort_buffer_size / num chunks. 
       If num_chunks > mergesort_buffer_size, num_vals_per_chunk < 1, which doesn't make sense. Need at least 1 val per chunk since can't store partial ints.
-
+        - mergesort_bs must be >= num_chunks
+- Chunk size must be a multiple of 512
+- There are no balances for chunks that have different population sizes (i.e., given a file size of 257, chunk 1 gets 128 vals in the raw_num_buffer and so does chunk 2 even though it only has 1 value in the whole chunk)
+    - Once a chunk runs out of values, that chunk's space in raw_num_buffer cannot currently be used by other chunks
 
 
 */
-
 
 #define NOMINMAX
 #include "windows.h"
