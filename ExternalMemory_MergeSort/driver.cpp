@@ -86,13 +86,18 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    
-    was_fail = extsrt.deep_validate();
-    if (was_fail)
-    {
-        printf("Failed in deep validate");
-        return 1;
+
+    if (FILE_SIZE <= 2621440) {
+        was_fail = extsrt.deep_validate();
+        if (was_fail)
+        {
+            printf("Failed in deep validate");
+            return 1;
+        }
     }
+    DeleteFile(fname);
+    DeleteFile(chunk_sorted_fname);
+    DeleteFile(full_sorted_fname);
     //*/
 
     return 0;

@@ -1,5 +1,6 @@
 #ifndef EXTERNALSORT_H
 #define EXTERNALSORT_H
+#include <vector>
 
 struct state_vars {
     /*  deals with file  */
@@ -55,7 +56,8 @@ class external_sort
     bool debug = false;
 
     // mergesort values
-    struct state_vars* state;
+    //struct state_vars *state;
+    std::vector<state_vars> state;
     unsigned long long int mergesort_buffer_size;
 
     unsigned long bytes_per_sector;
@@ -88,6 +90,8 @@ class external_sort
 public:
     // constructor
     external_sort(unsigned long long int _FILE_SIZE, char _fname[], char _chunk_sorted_fname[], char _full_sorted_fname[], int _num_runs = 1, bool _TEST_SORT = false, bool _GIVE_VALS = false, bool _DEBUG = false);
+
+    ~external_sort();
 
     int write_file();
 
