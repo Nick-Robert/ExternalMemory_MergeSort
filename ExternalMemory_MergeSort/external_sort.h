@@ -47,9 +47,10 @@ class external_sort
     LARGE_INTEGER windows_fs;
     unsigned int write_buffer_size;
     unsigned long long int chunk_size;
-    char *fname;
-    char *chunk_sorted_fname;
-    char *full_sorted_fname;
+    char* fname;
+    char* chunk_sorted_fname;
+    char* full_sorted_fname;
+    char* metrics_fname;
 
     bool test_sort = false;
     bool give_vals = false;
@@ -85,11 +86,12 @@ class external_sort
     double total_merge_read_time;
     double total_heap_time;
     double total_merge_write_time;
+    unsigned int num_seeks;
 
 
 public:
     // constructor
-    external_sort(unsigned long long int _FILE_SIZE, char _fname[], char _chunk_sorted_fname[], char _full_sorted_fname[], int _num_runs = 1, bool _TEST_SORT = false, bool _GIVE_VALS = false, bool _DEBUG = false);
+    external_sort(unsigned long long int _FILE_SIZE, unsigned long long int _MEM_SIZE, char _fname[], char _chunk_sorted_fname[], char _full_sorted_fname[], char _metrics_fname[], int _num_runs = 1, bool _TEST_SORT = false, bool _GIVE_VALS = false, bool _DEBUG = false);
 
     ~external_sort();
 
@@ -100,6 +102,8 @@ public:
     int merge_sort();
 
     void print_metrics();
+
+    int save_metrics(bool header=false, bool extra_space=false);
 
     int generate_averages();
 

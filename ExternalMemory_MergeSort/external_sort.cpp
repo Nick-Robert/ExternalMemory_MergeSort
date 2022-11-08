@@ -12,17 +12,22 @@ Notes:
 */
 
 #define NOMINMAX
-#include "windows.h"
 #include <stdio.h>      
 #include <stdlib.h>  
 #include <algorithm>
 #include <time.h>
-#include "external_sort.h"
-#include "MinHeap.h"
 #include <queue>
 #include <algorithm>
 #include <limits>
 #include <unordered_set>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <fstream>
+#include <istream>
+#include <windows.h>
+#include "external_sort.h"
+#include "MinHeap.h"
 
 using namespace std;
 
@@ -41,15 +46,13 @@ struct my_lesser {
 };
 
 
-external_sort::external_sort(unsigned long long int _FILE_SIZE, char _fname[], char _chunk_sorted_fname[], char _full_sorted_fname[],int _num_runs, bool _TEST_SORT, bool _GIVE_VALS, bool _DEBUG) 
-    : file_size{ _FILE_SIZE }, fname{ _fname }, chunk_sorted_fname{ _chunk_sorted_fname }, full_sorted_fname{ _full_sorted_fname }, test_sort{ _TEST_SORT }, give_vals{ _GIVE_VALS }, debug{ _DEBUG }, num_runs{ _num_runs }
+external_sort::external_sort(unsigned long long int _FILE_SIZE, unsigned long long int _MEM_SIZE, char _fname[], char _chunk_sorted_fname[], char _full_sorted_fname[], char _metrics_fname[], int _num_runs, bool _TEST_SORT, bool _GIVE_VALS, bool _DEBUG)
+    : file_size{ _FILE_SIZE }, fname{ _fname }, chunk_sorted_fname{ _chunk_sorted_fname }, full_sorted_fname{ _full_sorted_fname }, test_sort{ _TEST_SORT }, give_vals{ _GIVE_VALS }, debug{ _DEBUG }, num_runs{ _num_runs }, metrics_fname{ _metrics_fname }, chunk_size { _MEM_SIZE }, mergesort_buffer_size { _MEM_SIZE }
 {
     this->windows_fs = { 0 };
     this->windows_fs.QuadPart = sizeof(unsigned int) * _FILE_SIZE;
     this->write_buffer_size = (static_cast<unsigned long long>(1) << 20) / sizeof(unsigned int);
-    // lowest this can be is (static_cast<unsigned long long>(1) << 9) / sizeof(unsigned int); since it results in 512 bytes
-    // MUST BE A MULTIPLE OF 512
-    this->chunk_size = (static_cast<unsigned long long>(1) << 30) / sizeof(unsigned int);
+    
     this->total_generate_time = 0;
     this->total_write_time = 0;
     this->total_sort_time = 0;
@@ -59,9 +62,7 @@ external_sort::external_sort(unsigned long long int _FILE_SIZE, char _fname[], c
     this->total_merge_read_time = 0;
     this->total_heap_time = 0;
     this->total_merge_write_time = 0;
-    //this->mergesort_buffer_size = (static_cast<unsigned long long>(1) << 10) / sizeof(unsigned int);
-    this->mergesort_buffer_size = chunk_size;
-    // chunk size must be == mergesort_buffer_size
+    this->num_seeks = 0;
 
 
     BOOL succeeded = GetDiskFreeSpaceA(NULL, NULL, &this->bytes_per_sector, NULL, NULL);
@@ -709,6 +710,7 @@ int external_sort::merge_sort()
                     printf("%s: Failed setting file pointer in chunk sorted file with %d\n", __FUNCTION__, GetLastError());
                     return 1;
                 }
+                this->num_seeks++;
 
                 if (this->debug) {
                     printf("    num_moved = %lu\n", num_moved);
@@ -785,6 +787,7 @@ int external_sort::merge_sort()
             printf("%s: Failed setting file pointer to truncate merged file with %d\n", __FUNCTION__, GetLastError());
             return 1;
         }
+        this->num_seeks++;
 
         if (!SetEndOfFile(full_sorted_file)) {
             printf("%s: Failed setting end of file to truncate merged file with %d\n", __FUNCTION__, GetLastError());
@@ -849,6 +852,55 @@ void external_sort::print_metrics()
     printf("    Heap rate:       %f MB/s\n", this->file_size * this->num_runs * sizeof(unsigned int) / (this->total_heap_time * 1e6));
     printf("    Write time:      %f s\n", this->total_merge_write_time / this->num_runs);
     printf("    Write rate:      %f MB/s\n", this->file_size * this->num_runs * sizeof(unsigned int) / (this->total_merge_write_time * 1e6));
+}
+
+
+int external_sort::save_metrics(bool header, bool extra_space) 
+{
+    ifstream check;
+    string line = "";
+    stringstream s;
+    check.open(this->metrics_fname);
+    if (header/*check.peek() == ifstream::traits_type::eof() || extra_space*/)
+    {
+        if (extra_space) { s << "\n"; }
+        s << "File Size (MB),Memory Size (MB),Number of Seeks,,Generation Time (s),Generation Rate (million keys/s),Write Time (s),Write Rate (MB/s),,";
+        s << "Sort Time (s),Sort Rate (MB/s),Sort Rate (million keys/s),Read Time (s),Read Rate (MB/s),,";
+        s << "Merge Time (s),Merge Rate (MB/s),Load Time (s),Load Rate (MB/s),Read Time (s),Read Rate (MB/s),";
+        s << "Heap Time (s),Heap Rate (MB/s),Write Time (s),Write Rate (MB/s),\n";
+    }
+    check.close();
+    ofstream ofile;
+    ofile.open(this->metrics_fname, ios_base::app);
+    if (ofile.is_open()) {
+        // file size and memory size
+        s << this->file_size * sizeof(unsigned int) / 1e6 << "," << this->chunk_size * sizeof(unsigned int) / 1e6 << "," << this->num_seeks << ",,";
+        // generation time and rate
+        s << this->total_generate_time / this->num_runs << "," << this->file_size * this->num_runs / (this->total_generate_time * 1e6) << ",";
+        // write time and rate
+        s << this->total_write_time / this->num_runs << "," << this->file_size * this->num_runs * sizeof(unsigned int) / (this->total_write_time * 1e6) << ",,";
+        // sort time and rates
+        s << this->total_sort_time / this->num_runs << "," << this->file_size * this->num_runs * sizeof(unsigned int) / (this->total_sort_time * 1e6) << "," << this->file_size * this->num_runs / (this->total_sort_time * 1e6) << ",";
+        // read time and rate
+        s << this->total_read_time / this->num_runs << "," << this->file_size * this->num_runs * sizeof(unsigned int) / (this->total_read_time * 1e6) << ",,";
+        // merge time and rate
+        s << this->total_merge_time / this->num_runs << "," << this->file_size * this->num_runs * sizeof(unsigned int) / (this->total_merge_time * 1e6) << ",";
+        // load time and rate
+        s << this->total_load_time / this->num_runs << "," << static_cast<unsigned long long>((1 << 30)) * this->num_runs * sizeof(unsigned int) / (this->total_load_time * 1e6) << ",";
+        // read time and rate
+        s << this->total_merge_read_time / this->num_runs << "," << this->file_size * this->num_runs * sizeof(unsigned int) / (this->total_merge_read_time * 1e6) << ",";
+        // heap time and rate
+        s << this->total_heap_time / this->num_runs << "," << this->file_size * this->num_runs * sizeof(unsigned int) / (this->total_heap_time * 1e6) << ",";
+        // write time and rate
+        s << this->total_merge_write_time / this->num_runs << "," << this->file_size * this->num_runs * sizeof(unsigned int) / (this->total_merge_write_time * 1e6) << ",\n";
+        if (extra_space) {
+            s << "\n";
+        }
+        line = s.str();
+        ofile << line;
+    }
+    ofile.close();
+    return 0;
 }
 
 
