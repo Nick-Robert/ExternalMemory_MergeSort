@@ -1,7 +1,7 @@
 #ifndef EXTERNALSORT_H
 #define EXTERNALSORT_H
 #include <vector>
-
+#include "MinHeap.h"
 struct state_vars {
     /*  deals with file  */
     // in bytes
@@ -18,7 +18,7 @@ struct state_vars {
 
     /*  deals with buffer  */
     // pointer 
-    unsigned int* bufpos;
+    KEY_TYPE* bufpos;
     // how many vals are currently in the buffer
     INT64 curr_buflen;
     // in number of vals
@@ -77,6 +77,7 @@ class external_sort
 
     // validation vals
     int num_runs;
+    double total_time;
     double total_generate_time;
     double total_write_time;
     double total_sort_time;
