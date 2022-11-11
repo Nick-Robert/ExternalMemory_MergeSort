@@ -610,8 +610,8 @@ int external_sort::merge_sort()
     QueryPerformanceCounter(&end);
     heap_duration += end.QuadPart - start.QuadPart;
 
-    unsigned sorted_buf_size = 0;
-    unsigned last_val = 0;
+    unsigned long long sorted_buf_size = 0;
+    KEY_TYPE last_val = 0;
     QueryPerformanceCounter(&merge_start);
     while (mh.size()) {
         MinHeapNode root = mh.top();
@@ -632,7 +632,7 @@ int external_sort::merge_sort()
         
         state_vars* sv = &this->state[root.chunk_index];
         if (root.val < last_val) {
-            printf("%s: next_val (%u) is less than last_val (%u) [IDX = %u]\n", __FUNCTION__, root.val, last_val, root.chunk_index);
+            printf("%s: next_val (%llu) is less than last_val (%llu) [IDX = %u]\n", __FUNCTION__, root.val, last_val, root.chunk_index);
             printf("    sv->curr_buflen = %u\n", sv->curr_buflen);
             return 1;
         }
