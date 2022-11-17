@@ -1,13 +1,14 @@
 #ifndef MINHEAP_H
 #define MINHEAP_H
+#include "commons.h"
 
 // originally unsigned int
-typedef unsigned long long KEY_TYPE;
+//typedef unsigned int KEY_TYPE;
 
 
 struct MinHeapNode
 {
-	KEY_TYPE val;
+	Itemtype val;
 	unsigned int chunk_index;
 };
 

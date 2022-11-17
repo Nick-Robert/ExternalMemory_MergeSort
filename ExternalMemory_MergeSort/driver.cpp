@@ -15,7 +15,11 @@
 #include <stdio.h>      
 #include <windows.h>
 #include "external_sort.h"
-
+//#include "commons.h"
+//#include "Writer.h"
+//#include "utils.h"
+//#include "merge_utils.h"
+//#include "sorter.h"
 
 
 int main(int argc, char** argv) 
@@ -39,7 +43,7 @@ int main(int argc, char** argv)
     unsigned long long int fs = strtoull(argv[1], nullptr, 10);
     // lowest this can be is (static_cast<unsigned long long>(1) << 9) / sizeof(unsigned int); since it results in 512 bytes
     // MUST BE A MULTIPLE OF 512
-    unsigned long long int ms = (static_cast<unsigned long long>(1) << 30) / sizeof(unsigned int);
+    unsigned long long int ms = (static_cast<unsigned long long>(1) << 30) / sizeof(Itemtype);
 
     //unsigned int BUFFER_SIZE = (1<<20) / sizeof(unsigned int);
     char fname[] = "output_files\\test.bin";
@@ -77,11 +81,13 @@ int main(int argc, char** argv)
     }
     int num_runs = 1;
 
-    unsigned long long fs_max = 32 * (static_cast<unsigned long long>(1) << 30) / sizeof(unsigned int);          // 8 GB
-    unsigned long long ms_max = 2 * (static_cast<unsigned long long>(1) << 30) / sizeof(unsigned int);          // 2 GB
+    unsigned long long fs_max = (32 * (static_cast<unsigned long long>(1) << 30)) / sizeof(Itemtype);          // 8 GB
+
+    unsigned long long ms_max = /*2 **/ (static_cast<unsigned long long>(1) << 30) / sizeof(Itemtype);          // 2 GB
+
     unsigned long long fs_start, ms_start;
-    fs_start = 1;/*(static_cast<unsigned long long>(1) << 30) / sizeof(unsigned int);*/                                     // 1 GB
-    ms_start = 100 * (static_cast<unsigned long long>(1) << 20) / sizeof(unsigned int);                               // 100 MB
+    fs_start = 1; /* (static_cast<unsigned long long>(1) << 20) / sizeof(Itemtype);*/                                  // 1 GB
+    ms_start = /*100 * (static_cast<unsigned long long>(1) << 20) / sizeof(Itemtype)*/(static_cast<unsigned long long>(1) << 30) / sizeof(Itemtype);                               // 100 MB
     fs = fs_start;
     ms = ms_start;
     unsigned num_fs_iterations = 0, num_ms_iterations = 0, number_iterations = 0;

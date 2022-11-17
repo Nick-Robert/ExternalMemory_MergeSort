@@ -1,6 +1,7 @@
 #ifndef EXTERNALSORT_H
 #define EXTERNALSORT_H
-#include <vector>
+//#include <vector>
+//#include "commons.h"
 #include "MinHeap.h"
 struct state_vars {
     /*  deals with file  */
@@ -9,22 +10,22 @@ struct state_vars {
     // in bytes
     unsigned long long end_offset;
     // in bytes
-    INT64 seek_offset;
+    uint64_t seek_offset;
     // in bytes
     unsigned long long chunk_ptr;
 
     // in number of vals
-    INT64 chunk_size;
+    uint64_t chunk_size;
 
     /*  deals with buffer  */
     // pointer 
-    KEY_TYPE* bufpos;
+    Itemtype* bufpos;
     // how many vals are currently in the buffer
-    INT64 curr_buflen;
+    uint64_t curr_buflen;
     // in number of vals
-    INT64 bufsize;
+    uint64_t bufsize;
     // in number of vals
-    INT64 nobuff_bufsize;
+    uint64_t nobuff_bufsize;
 
     void print() const {
         printf("File vals\n");
