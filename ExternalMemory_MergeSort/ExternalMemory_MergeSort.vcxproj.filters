@@ -75,4 +75,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="v3_es.cpp">
+      <Filter>Source Files</Filter>
+    </None>
+  </ItemGroup>
 </Project>

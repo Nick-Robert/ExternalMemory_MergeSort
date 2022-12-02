@@ -3,8 +3,12 @@
 //#include <vector>
 //#include "commons.h"
 #include "MinHeap.h"
+#include <queue>
+
+
 struct state_vars {
     /*  deals with file  */
+    
     // in bytes
     unsigned long long start_offset;
     // in bytes
@@ -18,6 +22,12 @@ struct state_vars {
     uint64_t chunk_size;
 
     /*  deals with buffer  */
+
+    // a queue of 1MB blocks of Itemtype vals
+    queue<Itemtype*> bq;
+    // number of blocks
+    uint64_t num_blocks;
+
     // pointer 
     Itemtype* bufpos;
     // how many vals are currently in the buffer
@@ -40,6 +50,7 @@ struct state_vars {
         printf("    nobuff_bufsize = %llu\n", nobuff_bufsize);
     }
 };
+
 
 class external_sort
 {
@@ -115,4 +126,3 @@ public:
 };
 
 #endif
-

@@ -130,6 +130,9 @@
     <ClCompile Include="driver.cpp" />
     <ClCompile Include="external_sort.cpp" />
     <ClCompile Include="MinHeap.cpp" />
+    <None Include="v3_es.cpp">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</DeploymentContent>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="avx2_utils.h" />
