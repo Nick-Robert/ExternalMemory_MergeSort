@@ -20,11 +20,17 @@ struct state_vars {
 
     // in number of vals
     uint64_t chunk_size;
+    // number of vals in the current queue that have been touched
+    uint64_t tot_bq_vals;
+    // in number of blocks (1 start)
+    uint64_t curr_block;
+    // how many vals are in the last block
+    uint64_t num_vals_last_block;
 
     /*  deals with buffer  */
 
     // a queue of 1MB blocks of Itemtype vals
-    queue<Itemtype*> bq;
+    std::queue<Itemtype*> bq;
     // number of blocks
     uint64_t num_blocks;
 
@@ -59,6 +65,7 @@ class external_sort
     LARGE_INTEGER windows_fs;
     unsigned int write_buffer_size;
     unsigned long long int chunk_size;
+    unsigned long long int block_size;
     char* fname;
     char* chunk_sorted_fname;
     char* full_sorted_fname;
