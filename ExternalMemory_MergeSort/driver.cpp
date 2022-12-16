@@ -88,7 +88,7 @@ int main(int argc, char** argv)
 
     ms_start = ms_max;
     fs_start = fs_max;
-    fs_start = 4 * (static_cast<unsigned long long>(1) << 30) / sizeof(Itemtype);                                  // 1 GB
+    fs_start = 2 * (static_cast<unsigned long long>(1) << 30) / sizeof(Itemtype);                                  // 1 GB
     //ms_start = 100 * (static_cast<unsigned long long>(1) << 20) / sizeof(Itemtype)/*(static_cast<unsigned long long>(1) << 20) / sizeof(Itemtype)*/;                               // 100 MB
     fs = fs_start;
     ms = ms_start;
@@ -101,18 +101,21 @@ int main(int argc, char** argv)
         num_ms_iterations++;
         ms *= 2;
     }
+
+
     number_iterations = num_fs_iterations * num_ms_iterations;
     unsigned itr = 0;
     unsigned curr_itr = 0;
     for (fs = fs_start; fs <= fs_max; fs *= 2) {
         for (ms = ms_start; ms <= ms_max; ms *= 2) {
             itr++;
-            printf("Iteration %u / %u: fs = %llu, ms = %llu\n", itr, number_iterations, fs, ms);
+            //printf("Iteration %u / %u: fs = %llu, ms = %llu\n", itr, number_iterations, fs, ms);
+            printf("Iteration %u / %u: fs = %llu\n", itr, number_iterations, fs);
             external_sort extsrt(fs, ms, fname, chunk_sorted_fname, full_sorted_fname, metric_file_fname, num_runs, TEST_SORT, GIVE_VALS, DEBUG);
             int was_fail = extsrt.generate_averages();
             if (was_fail)
             {
-                printf("Failed in generate averages");
+                printf("Failed in generate averages\n");
                 return 1;
             }
             else {
@@ -129,7 +132,7 @@ int main(int argc, char** argv)
                 }
 
                 if (was_fail) {
-                    printf("Failed in save metrics");
+                    printf("Failed in save metrics\n");
                     return 1;
                 }
             }
@@ -137,7 +140,7 @@ int main(int argc, char** argv)
             was_fail = extsrt.shallow_validate();
             if (was_fail)
             {
-                printf("Failed in shallow validate");
+                printf("Failed in shallow validate\n");
                 return 1;
             }
 
@@ -146,9 +149,13 @@ int main(int argc, char** argv)
                 was_fail = extsrt.deep_validate();
                 if (was_fail)
                 {
-                    printf("Failed in deep validate");
+                    printf("Failed in deep validate\n");
                     return 1;
                 }
+            }
+            else
+            {
+                printf("\n");
             }
             DeleteFile(fname);
             DeleteFile(chunk_sorted_fname);
