@@ -1,6 +1,6 @@
 /*
 
-THIS VERSION HAS CONSTANT CHUNK SIZES IN MEMORY (CALLED PORTIONS) AND UTILIZES ORIGAMI SORT AND MINHEAP MERGE SORT
+THIS VERSION HAS VARIABLE CHUNK SIZES IN MEMORY (CALLED PORTIONS) AND UTILIZES ORIGAMI SORT AND MINHEAP MERGE SORT
     (has queues of blocks of 1MB memory of Itemtype)
 
 Notes:
@@ -579,26 +579,12 @@ int external_sort::merge_sort()
     unsigned long long total_bytes_touched = 0;
     DWORD num_bytes_touched;
 
-    //DWORD vals_per_chunk = 0;
-    //if (num_chunks * this->chunk_size > this->file_size) {
-    //    //vals_per_chunk = (this->file_size % num_chunks == 0) ? (this->file_size / num_chunks) : ((this->file_size / num_chunks) + 1);
-    //    vals_per_chunk = this->file_size / num_chunks;
-    //}
-    //else {
-    /*if (this->mem_avail / num_chunks < this->chunk_size) {
-        vals_per_chunk = this->mergesort_buffer_size / num_chunks;
-    }
-    else {*/
-    DWORD vals_per_chunk = this->chunk_size / num_chunks;
-    //}
-
-    unsigned long long delta = vals_per_chunk;
-    unsigned long long largest_chunk = vals_per_chunk;
-    /*delta = (2 * (this->mem_avail / sizeof(Itemtype)) / (num_chunks * (num_chunks + 1)));
-    largest_chunk = num_chunks * delta;*/
+    unsigned long long delta = 0;
+    unsigned long long largest_chunk = 0;
+    delta = (2 * (this->mem_avail / sizeof(Itemtype)) / (num_chunks * (num_chunks + 1)));
+    largest_chunk = num_chunks * delta;
 
     printf("    Number of chunks  = %llu\n", num_chunks);
-    printf("       vals_per_chunk = %llu vals\n", vals_per_chunk);
     printf("       delta          = %llu vals\n", delta);
     printf("       largest_chunk  = %llu vals\n", largest_chunk);
 
@@ -637,7 +623,7 @@ int external_sort::merge_sort()
         new_chunk.end_offset = (running_file_offset + new_chunk.chunk_size) * sizeof(Itemtype);
 
         // how big a portion this chunk gets in memory (not necessarilly contiguous)
-        new_chunk.bufsize = (std::min)((INT64)vals_per_chunk, (INT64)((new_chunk.end_offset - new_chunk.start_offset) / sizeof(Itemtype)));
+        new_chunk.bufsize = (std::min)((INT64)(delta * (static_cast<unsigned long long>(i) + 1)), (INT64)((new_chunk.end_offset - new_chunk.start_offset) / sizeof(Itemtype)));
         // next place in the file to start the next seek from the start_offset
         new_chunk.seek_offset = (std::min)(new_chunk.bufsize * sizeof(Itemtype), new_chunk.end_offset - new_chunk.start_offset);
 

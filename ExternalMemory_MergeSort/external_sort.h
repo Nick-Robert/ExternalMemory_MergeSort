@@ -71,6 +71,9 @@ class external_sort
     char* full_sorted_fname;
     char* metrics_fname;
 
+    std::queue<Itemtype*> free_blocks;
+    
+
     bool test_sort = false;
     bool give_vals = false;
     bool debug = false;
@@ -79,6 +82,7 @@ class external_sort
     //struct state_vars *state;
     std::vector<state_vars> state;
     unsigned long long int mergesort_buffer_size;
+    unsigned long long int mem_avail;
 
     unsigned long bytes_per_sector;
 
@@ -113,11 +117,13 @@ public:
     // constructor
     external_sort(unsigned long long int _FILE_SIZE, unsigned long long int _MEM_SIZE, char _fname[], char _chunk_sorted_fname[], char _full_sorted_fname[], char _metrics_fname[], int _num_runs = 1, bool _TEST_SORT = false, bool _GIVE_VALS = false, bool _DEBUG = false);
 
-    ~external_sort();
+    //~external_sort();
 
     int write_file();
 
     int sort_file();
+
+    uint64_t populate_blocks(unsigned idx, unsigned long long *remaining_vals, Itemtype* rbuff);
 
     int merge_sort();
 

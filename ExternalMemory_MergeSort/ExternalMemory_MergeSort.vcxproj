@@ -127,13 +127,26 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="driver.cpp" />
+    <ClCompile Include="driver.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="external_sort.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="MinHeap.cpp" />
-    <None Include="v3_es.cpp">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</DeploymentContent>
+    <ClCompile Include="origami_ext_sort.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="v3_es.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="v4_es.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <None Include="oldv3_es.cpp">
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </DeploymentContent>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </None>
   </ItemGroup>
   <ItemGroup>

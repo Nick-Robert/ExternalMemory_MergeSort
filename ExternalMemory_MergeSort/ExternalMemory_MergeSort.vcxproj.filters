@@ -24,6 +24,15 @@
     <ClCompile Include="external_sort.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="origami_ext_sort.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="v4_es.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="v3_es.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MinHeap.h">
@@ -76,7 +85,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="v3_es.cpp">
+    <None Include="oldv3_es.cpp">
       <Filter>Source Files</Filter>
     </None>
   </ItemGroup>

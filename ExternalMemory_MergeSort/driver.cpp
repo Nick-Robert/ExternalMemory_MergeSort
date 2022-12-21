@@ -74,21 +74,31 @@ int main(int argc, char** argv)
     if (DEBUG)
     {
         printf("FILE_SIZE = %llu\n", fs);
-        //printf("BUFFER_SIZE = %u\n", BUFFER_SIZE);
         printf("bytes_per_sector = %lu\n", bytes_per_sector);
         printf("FILE_SIZE mod BYTES_PER_SECTOR = %llu\n", fs % (unsigned long long)bytes_per_sector);
         printf("\n");
     }
     int num_runs = 1;
 
-    unsigned long long fs_max =  32 * ((static_cast<unsigned long long>(1) << 30)) / sizeof(Itemtype);          // 8 GB
+    ULARGE_INTEGER free_ds = { 0 };
+
+    succeeded = GetDiskFreeSpaceEx(NULL, NULL, NULL, &free_ds);
+    if (!succeeded) {
+        printf("driver: Failed getting disk information with %d\n", GetLastError());
+    }
+
+    //unsigned long long fs_max =  16 * ((static_cast<unsigned long long>(1) << 30)) / sizeof(Itemtype);          // 8 GB
+    // mem_avail = static_cast<unsigned long long>(1) << (unsigned)log2(mem_avail);
+    unsigned long long fs_max = static_cast<unsigned long long>(1) << (unsigned)log2(free_ds.QuadPart / (3 * sizeof(Itemtype)));
+    //printf("    fs_max = %llu\n", fs_max);
 
     unsigned long long ms_max = 2 * (static_cast<unsigned long long>(1) << 30) / sizeof(Itemtype);          // 2 GB
     unsigned long long fs_start, ms_start;
 
     ms_start = ms_max;
     fs_start = fs_max;
-    fs_start = 2 * (static_cast<unsigned long long>(1) << 30) / sizeof(Itemtype);                                  // 1 GB
+    //fs_start = 2 * (static_cast<unsigned long long>(1) << 30) / sizeof(Itemtype);                                  // 1 GB
+    fs_start = 1;// *(static_cast<unsigned long long>(1) << 30) / sizeof(Itemtype);                                  // 1 GB
     //ms_start = 100 * (static_cast<unsigned long long>(1) << 20) / sizeof(Itemtype)/*(static_cast<unsigned long long>(1) << 20) / sizeof(Itemtype)*/;                               // 100 MB
     fs = fs_start;
     ms = ms_start;
@@ -110,58 +120,31 @@ int main(int argc, char** argv)
         for (ms = ms_start; ms <= ms_max; ms *= 2) {
             itr++;
             //printf("Iteration %u / %u: fs = %llu, ms = %llu\n", itr, number_iterations, fs, ms);
-            printf("Iteration %u / %u: fs = %llu\n", itr, number_iterations, fs);
+            printf("Iteration %u / %u: fs = %llu B (%llu vals)\n", itr, number_iterations, fs * sizeof(Itemtype), fs);
             external_sort extsrt(fs, ms, fname, chunk_sorted_fname, full_sorted_fname, metric_file_fname, num_runs, TEST_SORT, GIVE_VALS, DEBUG);
-            int was_fail = extsrt.generate_averages();
-            if (was_fail)
+            extsrt.generate_averages();
+
+            //extsrt.print_metrics();
+            if (ms * 2 <= ms_max && curr_itr != 0)
             {
-                printf("Failed in generate averages\n");
-                return 1;
+                extsrt.save_metrics();
+            }
+            else if (ms*2 > ms_max && curr_itr != 0) {
+                extsrt.save_metrics(false, true);
             }
             else {
-                //extsrt.print_metrics();
-                if (ms * 2 <= ms_max && curr_itr != 0)
-                {
-                    was_fail = extsrt.save_metrics();
-                }
-                else if (ms*2 > ms_max && curr_itr != 0) {
-                    was_fail = extsrt.save_metrics(false, true);
-                }
-                else {
-                    was_fail = extsrt.save_metrics(true, false);
-                }
-
-                if (was_fail) {
-                    printf("Failed in save metrics\n");
-                    return 1;
-                }
+                extsrt.save_metrics(true, false);
             }
 
-            was_fail = extsrt.shallow_validate();
-            if (was_fail)
-            {
-                printf("Failed in shallow validate\n");
-                return 1;
-            }
-
+            extsrt.shallow_validate();
 
             if (fs <= 2621440) {
-                was_fail = extsrt.deep_validate();
-                if (was_fail)
-                {
-                    printf("Failed in deep validate\n");
-                    return 1;
-                }
+                extsrt.deep_validate();
             }
-            else
-            {
-                printf("\n");
-            }
+            printf("\n");
             DeleteFile(fname);
             DeleteFile(chunk_sorted_fname);
             DeleteFile(full_sorted_fname);
-            //*/
-            curr_itr++;
         }
         curr_itr = 0;
     }
