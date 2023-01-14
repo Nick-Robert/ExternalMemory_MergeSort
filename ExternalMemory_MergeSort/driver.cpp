@@ -98,9 +98,10 @@ int main(int argc, char** argv)
     ms_start = ms_max;
     fs_start = fs_max;
     //fs_start = 2 * (static_cast<unsigned long long>(1) << 30) / sizeof(Itemtype);                                  // 1 GB
-    fs_start = 1;// *(static_cast<unsigned long long>(1) << 30) / sizeof(Itemtype);                                  // 1 GB
+    fs_start = (static_cast<unsigned long long>(1) << 20) / sizeof(Itemtype);                                  // 1 GB
     //ms_start = 100 * (static_cast<unsigned long long>(1) << 20) / sizeof(Itemtype)/*(static_cast<unsigned long long>(1) << 20) / sizeof(Itemtype)*/;                               // 100 MB
-    fs = fs_start;
+    //fs = fs_start;
+    fs = static_cast<unsigned long long>(1) << 10;
     ms = ms_start;
     unsigned num_fs_iterations = 0, num_ms_iterations = 0, number_iterations = 0;
     while (fs <= fs_max) {

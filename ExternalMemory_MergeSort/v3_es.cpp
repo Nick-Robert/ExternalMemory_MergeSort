@@ -1,6 +1,6 @@
 /*
 
-THIS VERSION HAS CONSTANT CHUNK SIZES IN MEMORY (CALLED PORTIONS) AND UTILIZES ORIGAMI SORT AND MINHEAP MERGE SORT
+THIS VERSION HAS CONSTANT CHUNK SIZES IN MEMORY (PORTION) AND UTILIZES ORIGAMI SORT AND MINHEAP MERGE SORT
     (has queues of blocks of 1MB memory of Itemtype)
 
 Notes:
@@ -73,8 +73,8 @@ external_sort::external_sort(unsigned long long int _FILE_SIZE, unsigned long lo
 {
     this->windows_fs = { 0 };
     this->windows_fs.QuadPart = sizeof(Itemtype) * _FILE_SIZE;
-    this->write_buffer_size = (static_cast<unsigned long long>(1) << 20) / sizeof(Itemtype);
-    this->block_size = static_cast<unsigned long long>(1) << 20;
+    this->write_buffer_size = (1LLU << 20) / sizeof(Itemtype);
+    this->block_size = 1LLU << 20;
 
     this->total_time = 0;
     this->total_generate_time = 0;
@@ -96,7 +96,8 @@ external_sort::external_sort(unsigned long long int _FILE_SIZE, unsigned long lo
     unsigned long long mem_avail = 0.7 * statex.ullAvailPhys;
     // divided by 2 since Origami is an out-of-place sorter
     mem_avail = ((mem_avail + 511) & (~511)) / 2;
-    mem_avail = static_cast<unsigned long long>(1) << (unsigned)log2(mem_avail);
+    mem_avail = 1LLU << (unsigned)log2(mem_avail);
+    mem_avail = 536870912;
     this->mem_avail = mem_avail;
     printf("        External sort will use %llu B (%llu vals) of memory\n", mem_avail, mem_avail / sizeof(Itemtype));
     assert(mem_avail % sizeof(Itemtype) == 0);
@@ -358,7 +359,7 @@ int external_sort::sort_file()
         /*printf("        this->chunk_size = %lu\n", this->chunk_size);
         printf("        sizeof(Itemtype) = %lu\n", sizeof(Itemtype));*/
 
-        if (num_vals_to_read < (static_cast<unsigned long long>(1) << 20) / sizeof(Itemtype)) {
+        if (num_vals_to_read < (1LLU << 20) / sizeof(Itemtype)) {
             //printf("    quicksort\n");
             QueryPerformanceCounter(&start);
             std::sort(sort_buffer, sort_buffer + num_vals_to_read);
@@ -606,7 +607,7 @@ int external_sort::merge_sort()
     unsigned long long tot_bytes_from_delta = 0;
     for (unsigned int i = 0; i < num_chunks; i++)
     {
-        tot_bytes_from_delta += (static_cast<unsigned long long>(i) + 1) * delta;
+        tot_bytes_from_delta += ((static_cast<unsigned long long>(i)) + 1) * delta;
     }
 
     Itemtype* sorted_num_buffer = (Itemtype*)_aligned_malloc(this->write_buffer_size * sizeof(Itemtype), this->bytes_per_sector);

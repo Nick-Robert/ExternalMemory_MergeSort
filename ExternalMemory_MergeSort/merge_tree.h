@@ -77,7 +77,83 @@ namespace origami_merge_tree {
 		}
 	}
 
-	
+	// external
+	template <typename Reg, typename Item>
+	FORCEINLINE void merge_leaf_to_internal(Item** _loadFrom, Item** _opposite, Reg& a0, Reg& a1, Item* outbuf, Item* endA, Item* endB, Item** _endoutput, ui& exhaust, ui base_idx, origami_utils::IOHelper* IO) {
+		//printf("Merging leaf to internal @ %lu ... \n", base_idx);
+		// exhaust 0 -> both children have Items; 1 -> loadFrom empty; 2 -> opposite empty i.e. all empty
+		constexpr ui ITEMS_PER_REG = sizeof(Reg) / sizeof(Item);
+		Item* endoutput = *_endoutput;
+		if (outbuf != endoutput && exhaust < 2) {
+			Item* loadFrom = *_loadFrom;
+			Item* opposite = *_opposite;
+			// run if both children have Items
+			if (exhaust == 0) {
+				while (true) {
+					while (outbuf != endoutput && loadFrom != endA && loadFrom != endB) {
+						//printf("%llX, %llX, %llX, %llX, %llX\n", outbuf, endoutput, loadFrom, endA, endB);
+						bool first = *loadFrom < *opposite;
+						Item* tmp0 = first ? loadFrom : opposite;
+						opposite = first ? opposite : loadFrom;
+						loadFrom = tmp0;
+
+						origami_utils::rswap<Reg, Item>(a0, a1);
+						origami_utils::store<Reg, false>(a0, (Reg*)outbuf);		//origami_utils::print<Reg, Item>(a0);
+						outbuf += ITEMS_PER_REG;
+						origami_utils::load<Reg>(a0, (Reg*)loadFrom);
+						_mm_prefetch((char*)(loadFrom + 64), _MM_HINT_T2);
+						loadFrom += ITEMS_PER_REG;
+					}
+					// buffer full
+					if (outbuf == endoutput) break;
+					// else: some input buffer ran out
+					ui empty_idx = (loadFrom == endA) ? base_idx : (base_idx + 1);
+					//printf("Buffer %lu empty\n", empty_idx);
+					if (IO->bytes_left[empty_idx] > 0) {
+						IO->fill_buffer(empty_idx);
+						loadFrom = (Item*)IO->X[empty_idx];
+					}
+					else {
+						//printf("** Node %lu exhausted\n", empty_idx);
+						origami_utils::rswap<Reg, Item>(a0, a1);
+						origami_utils::store<Reg, false>(a0, (Reg*)outbuf); outbuf += ITEMS_PER_REG;
+						exhaust = 1;
+						break;
+					}
+				}
+			}
+			
+			if (outbuf != endoutput) {
+				Item* endOpposite = (loadFrom == endA) ? endB : endA;
+				ui opposite_idx = (loadFrom == endA) ? (base_idx + 1) : base_idx;
+				while (true) {
+					while (outbuf != endoutput && opposite != endOpposite) {
+						origami_utils::load<Reg>(a0, (Reg*)opposite); opposite += ITEMS_PER_REG;
+						origami_utils::rswap<Reg, Item>(a0, a1);
+						origami_utils::store<Reg, false>(a0, (Reg*)outbuf); outbuf += ITEMS_PER_REG;
+					}
+					if (outbuf == endoutput) break;
+					// refill opposite buffer
+					//printf("Buffer %lu empty\n", opposite_idx);
+					if (IO->bytes_left[opposite_idx] > 0) {
+						IO->fill_buffer(opposite_idx);
+						opposite = (Item*)IO->X[opposite_idx];
+					}
+					else {
+						//printf("** Node %lu exhausted\n", opposite_idx);
+						origami_utils::store<Reg, false>(a1, (Reg*)outbuf); outbuf += ITEMS_PER_REG;
+						exhaust = 2;
+						endoutput = outbuf;
+						break;
+					}
+				}
+			}
+			*_loadFrom = loadFrom;
+			*_opposite = opposite;
+			*_endoutput = endoutput;
+		}
+	}
+
 	template <typename Reg, typename Item>
 	FORCEINLINE Item* merge_internal_to_internal(Item** _loadFrom, Item** _opposite, Reg& a0, Reg& a1, Item* outbuf, Item* endA, Item* endB, Item** _endoutput, ui exhaust0, ui exhaust1, ui& exhaust) {
 		//printf("Merging internal to internal ... \n");
@@ -172,7 +248,8 @@ namespace origami_merge_tree {
 		Item* loadFrom = *_loadFrom;
 		Item* opposite = *_opposite;
 		Item* output = *_output;
-		/*register */Reg a0;
+		//register Reg a0;
+		Reg a0;
 
 		//printf("LF: %llX, OP: %llX, ENDA: %llX, ENDB: %llX\n", loadFrom, opposite, endA, endB);
 		//printf("Exhaust0: %lu, Exhaust1: %lu\n", exhaust0, exhaust1); 
@@ -230,7 +307,8 @@ namespace origami_merge_tree {
 		Item* loadFrom = *_loadFrom;
 		Item* opposite = *_opposite;
 		Item* output = *_output;
-		/*register*/ Reg a0;
+		//register Reg a0;
+		Reg a0;
 
 		//printf("LF: %llX, OP: %llX, ENDA: %llX, ENDB: %llX\n", loadFrom, opposite, endA, endB);
 		//printf("Exhaust0: %lu, Exhaust1: %lu\n", exhaust0, exhaust1); 
@@ -291,13 +369,117 @@ namespace origami_merge_tree {
 		*_output = output;
 	}
 
+	// external
+	template <typename Reg, typename Item>
+	FORCEINLINE void merge_root_unaligned(Item** _loadFrom, Item** _opposite, Reg& a1, Item** _output, Item* endA, Item* endB, ui exhaust0, ui exhaust1, Item* outputEnd, origami_utils::IOHelper* IO) {
+		constexpr ui ITEMS_PER_REG = sizeof(Reg) / sizeof(Item);
+		Item* loadFrom = *_loadFrom;
+		Item* opposite = *_opposite;
+		Item* output = *_output;
+		//register Reg a0;
+		Reg a0;
+
+		//printf("LF: %llX, OP: %llX, ENDA: %llX, ENDB: %llX\n", loadFrom, opposite, endA, endB);
+		//printf("Exhaust0: %lu, Exhaust1: %lu\n", exhaust0, exhaust1); 
+
+		while (true) {
+			//printf("Merging at root, left: %llu ... \n", outputEnd - output);
+			while (loadFrom != endA && loadFrom != endB && output != outputEnd) { // 
+				origami_utils::load<Reg>(a0, (Reg*)loadFrom); loadFrom += ITEMS_PER_REG;
+				bool first = *loadFrom < *opposite;
+				Item* tmp0 = first ? loadFrom : opposite;
+				opposite = first ? opposite : loadFrom;
+				loadFrom = tmp0;
+
+				origami_utils::rswap<Reg, Item>(a0, a1);
+				origami_utils::store<Reg, true>(a0, (Reg*)output);				//origami_utils::print<Reg, Item>(a0);
+
+
+				/*Item* newoutput = output + ITEMS_PER_REG;
+				ui prior_unalign_items_new = prior_unalign_items_loc - ITEMS_PER_REG;
+				output = prior_unalign_items_loc ? output : newoutput;
+				prior_unalign_items_loc = prior_unalign_items_loc ? prior_unalign_items_new : prior_unalign_items_loc; */
+
+				output += ITEMS_PER_REG;
+			}
+			if (output != outputEnd) break;
+			// output buffer full
+			if (output == outputEnd) {
+				//printf("Output buffer full ... writing to file\n");
+				IO->dump_buffer(0, (char*)output);
+				output = (Item*)IO->out;
+				continue;
+			}
+		}
+				
+
+		//printf("LF: %llX, OP: %llX, ENDA: %llX, ENDB: %llX\n", loadFrom, opposite, endA, endB);
+		// handle tail
+		if (output != outputEnd) {
+			if (exhaust0 == 2 && loadFrom == endA) {
+				// printf("Handling tail -- loadFrom == endA\n");
+				Item* endOpposite = endB;
+				while (true) {
+					while (opposite != endOpposite && output != outputEnd) {
+						origami_utils::load<Reg>(a0, (Reg*)opposite); opposite += ITEMS_PER_REG;
+						origami_utils::rswap<Reg, Item>(a0, a1);
+						origami_utils::store<Reg, true>(a0, (Reg*)output); output += ITEMS_PER_REG;
+					}
+					if (output == outputEnd) {
+						//printf("Output buffer full ... writing to file\n");
+						IO->dump_buffer(0, (char*)output);
+						output = (Item*)IO->out;
+						continue;
+					}
+					if (exhaust1 == 2) {
+						origami_utils::store<Reg, true>(a1, (Reg*)output); output += ITEMS_PER_REG;
+						IO->dump_buffer(0, (char*)output);
+						output = outputEnd;
+					}
+					break;
+				}
+				Item* tmp = loadFrom; loadFrom = opposite; opposite = tmp;	// std::swap is expensive
+			}
+			else if (exhaust1 == 2 && loadFrom == endB) {
+				// printf("Handling tail -- loadFrom == endB\n");
+				Item* endOpposite = endA;
+				while (true) {
+					while (opposite != endOpposite && output != outputEnd) {
+						origami_utils::load<Reg>(a0, (Reg*)opposite); opposite += ITEMS_PER_REG;
+						origami_utils::rswap<Reg, Item>(a0, a1);
+						origami_utils::store<Reg, true>(a0, (Reg*)output); output += ITEMS_PER_REG;
+					}
+					if (output == outputEnd) {
+						//printf("Output buffer full ... writing to file\n");
+						IO->dump_buffer(0, (char*)output);
+						output = (Item*)IO->out;
+						continue;
+					}
+					if (exhaust0 == 2) {
+						origami_utils::store<Reg, true>(a1, (Reg*)output); output += ITEMS_PER_REG;
+						IO->dump_buffer(0, (char*)output);
+						output = outputEnd;
+					}
+					break;
+				}
+				Item* tmp = loadFrom; loadFrom = opposite; opposite = tmp;
+			}
+		}
+		//printf("LF: %llX, OP: %llX, ENDA: %llX, ENDB: %llX\n", loadFrom, opposite, endA, endB);
+		//origami_utils::store<Reg, true>(a0, (Reg*)output); output += ITEMS_PER_REG;
+		*_loadFrom = loadFrom;
+		*_opposite = opposite;
+		*_output = output;
+	}
+
 	template <typename Reg, typename Item>
 	FORCEINLINE void merge_root_unaligned_skip_prior(Item** _loadFrom, Item** _opposite, Reg& a1, Item* endA, Item* endB, ui exhaust0, ui exhaust1, ui* prior_unalign_items) {
 		constexpr ui ITEMS_PER_REG = sizeof(Reg) / sizeof(Item);
 		Item* loadFrom = *_loadFrom;
 		Item* opposite = *_opposite;
 		ui prior_unalign_items_loc = *prior_unalign_items;
-		/*register*/ Reg a0;
+		//register Reg a0;
+		Reg a0;
 
 		while (loadFrom != endA && loadFrom != endB && prior_unalign_items_loc > 0) { // 
 			origami_utils::load<Reg>(a0, (Reg*)loadFrom); loadFrom += ITEMS_PER_REG;
@@ -333,7 +515,7 @@ namespace origami_merge_tree {
 			printf("[%llX %llX] [%llX %llX] [%llX %llX] [%llX %llX]\n", loadFrom0, leafEnd0, opposite0, leafEnd1, loadFrom1, leafEnd2, opposite1, leafEnd3);
 		}
 
-		void merge_leaf_to_root_init(ui base_idx = 0) {
+		void merge_leaf_to_root_init(ui base_idx = 0, origami_utils::IOHelper* IO = nullptr) {
 			constexpr ui ITEMS_PER_REG = sizeof(Reg) / sizeof(Item);
 			Item* loadFrom0 = this->loadFrom0;
 			Item* loadFrom1 = this->loadFrom1;
@@ -362,9 +544,14 @@ namespace origami_merge_tree {
 			origami_utils::load<Reg>(a2, (Reg*)loadFrom1); loadFrom1 += ITEMS_PER_REG;
 			origami_utils::load<Reg>(a3, (Reg*)opposite1); opposite1 += ITEMS_PER_REG;
 
-			origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom0, &opposite0, a0, a1, l1Buf0, leafEnd0, leafEnd1, &l1endBuf0, exhaust0);
-			origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom1, &opposite1, a2, a3, l1Buf1, leafEnd2, leafEnd3, &l1endBuf1, exhaust1);
-			
+			if constexpr (external) {
+				origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom0, &opposite0, a0, a1, l1Buf0, leafEnd0, leafEnd1, &l1endBuf0, exhaust0, base_idx, IO);
+				origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom1, &opposite1, a2, a3, l1Buf1, leafEnd2, leafEnd3, &l1endBuf1, exhaust1, base_idx + 2, IO);
+			}
+			else {
+				origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom0, &opposite0, a0, a1, l1Buf0, leafEnd0, leafEnd1, &l1endBuf0, exhaust0);
+				origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom1, &opposite1, a2, a3, l1Buf1, leafEnd2, leafEnd3, &l1endBuf1, exhaust1);
+			}
 
 
 			origami_utils::load<Reg>(a5, (Reg*)opposite); opposite += ITEMS_PER_REG;
@@ -386,7 +573,7 @@ namespace origami_merge_tree {
 			this->l1endBuf1 = l1endBuf1;
 		}
 
-		void merge_leaf_to_internal_init(ui base_idx = 0) {
+		void merge_leaf_to_internal_init(ui base_idx = 0, origami_utils::IOHelper* IO = nullptr) {
 			constexpr ui ITEMS_PER_REG = sizeof(Reg) / sizeof(Item);
 			Item* loadFrom0 = this->loadFrom0;
 			Item* loadFrom1 = this->loadFrom1;
@@ -415,8 +602,16 @@ namespace origami_merge_tree {
 			origami_utils::load<Reg>(a2, (Reg*)loadFrom1); loadFrom1 += ITEMS_PER_REG;
 			origami_utils::load<Reg>(a3, (Reg*)opposite1); opposite1 += ITEMS_PER_REG;
 
-			origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom0, &opposite0, a0, a1, l1Buf0, leafEnd0, leafEnd1, &l1endBuf0, exhaust0);
-			origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom1, &opposite1, a2, a3, l1Buf1, leafEnd2, leafEnd3, &l1endBuf1, exhaust1);			
+			if constexpr (external) {
+				origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom0, &opposite0, a0, a1, l1Buf0, leafEnd0, leafEnd1, &l1endBuf0, exhaust0, base_idx, IO);
+				origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom1, &opposite1, a2, a3, l1Buf1, leafEnd2, leafEnd3, &l1endBuf1, exhaust1, base_idx + 2, IO);
+			}
+			else {
+				origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom0, &opposite0, a0, a1, l1Buf0, leafEnd0, leafEnd1, &l1endBuf0, exhaust0);
+				origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom1, &opposite1, a2, a3, l1Buf1, leafEnd2, leafEnd3, &l1endBuf1, exhaust1);
+			}
+
+			
 
 			origami_utils::load<Reg>(a4, (Reg*)loadFrom); loadFrom += ITEMS_PER_REG;
 			origami_utils::load<Reg>(a5, (Reg*)opposite); opposite += ITEMS_PER_REG;
@@ -559,7 +754,7 @@ namespace origami_merge_tree {
 			this->exhaust5 = exhaust5;
 		}
 
-		void merge_leaf_to_root() {
+		void merge_leaf_to_root(origami_utils::IOHelper* IO = nullptr) {
 			constexpr ui ITEMS_PER_REG = sizeof(Reg) / sizeof(Item);
 			Item* loadFrom0 = this->loadFrom0;
 			Item* loadFrom1 = this->loadFrom1;
@@ -593,11 +788,13 @@ namespace origami_merge_tree {
 
 				// refill empty child
 				if (exhaust0 < 2 && loadFrom == l1endBuf0) {
-					origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom0, &opposite0, a0, a1, l1Buf0, leafEnd0, leafEnd1, &l1endBuf0, exhaust0);
+					if constexpr (external) origami_merge_tree::merge_leaf_to_internal(&loadFrom0, &opposite0, a0, a1, l1Buf0, leafEnd0, leafEnd1, &l1endBuf0, exhaust0, 0, IO);
+					else origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom0, &opposite0, a0, a1, l1Buf0, leafEnd0, leafEnd1, &l1endBuf0, exhaust0);
 					loadFrom = l1Buf0;
 				}
 				else if (exhaust1 < 2 && loadFrom == l1endBuf1) {
-					origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom1, &opposite1, a2, a3, l1Buf1, leafEnd2, leafEnd3, &l1endBuf1, exhaust1);
+					if constexpr (external) origami_merge_tree::merge_leaf_to_internal(&loadFrom1, &opposite1, a2, a3, l1Buf1, leafEnd2, leafEnd3, &l1endBuf1, exhaust1, 2, IO);
+					else origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom1, &opposite1, a2, a3, l1Buf1, leafEnd2, leafEnd3, &l1endBuf1, exhaust1);
 					loadFrom = l1Buf1;
 				}
 				bool first = *loadFrom < *opposite;
@@ -624,7 +821,7 @@ namespace origami_merge_tree {
 			this->a5 = a5;
 		}
 
-		void merge_leaf_to_root_unaligned(ui* prior_unalign_items) {
+		void merge_leaf_to_root_unaligned(ui* prior_unalign_items, origami_utils::IOHelper* IO = nullptr) {
 			constexpr ui ITEMS_PER_REG = sizeof(Reg) / sizeof(Item);
 			Item* loadFrom0 = this->loadFrom0;
 			Item* loadFrom1 = this->loadFrom1;
@@ -656,11 +853,13 @@ namespace origami_merge_tree {
 				if (*prior_unalign_items == 0) break;
 				// refill empty child
 				if (exhaust0 < 2 && loadFrom == l1endBuf0) {
-					origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom0, &opposite0, a0, a1, l1Buf0, leafEnd0, leafEnd1, &l1endBuf0, exhaust0);
+					if constexpr (external) origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom0, &opposite0, a0, a1, l1Buf0, leafEnd0, leafEnd1, &l1endBuf0, exhaust0, 0, IO);
+					else origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom0, &opposite0, a0, a1, l1Buf0, leafEnd0, leafEnd1, &l1endBuf0, exhaust0);
 					loadFrom = l1Buf0;
 				}
 				else if (exhaust1 < 2 && loadFrom == l1endBuf1) {
-					origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom1, &opposite1, a2, a3, l1Buf1, leafEnd2, leafEnd3, &l1endBuf1, exhaust1);
+					if constexpr (external) origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom1, &opposite1, a2, a3, l1Buf1, leafEnd2, leafEnd3, &l1endBuf1, exhaust1, 2, IO);
+					else origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom1, &opposite1, a2, a3, l1Buf1, leafEnd2, leafEnd3, &l1endBuf1, exhaust1);
 					loadFrom = l1Buf1;
 				}
 				bool first = *loadFrom < *opposite;
@@ -672,16 +871,19 @@ namespace origami_merge_tree {
 
 			Item* o = output;
 			while (output < outputEnd) {
-				merge_root_unaligned(&loadFrom, &opposite, a5, &output, l1endBuf0, l1endBuf1, exhaust0, exhaust1, outputEnd);
+				if constexpr (external) merge_root_unaligned(&loadFrom, &opposite, a5, &output, l1endBuf0, l1endBuf1, exhaust0, exhaust1, outputEnd, IO);
+				else merge_root_unaligned(&loadFrom, &opposite, a5, &output, l1endBuf0, l1endBuf1, exhaust0, exhaust1, outputEnd);
 				//printf("Merged: %llu\n", output - o);
 
 				// refill empty child
 				if (exhaust0 < 2 && loadFrom == l1endBuf0) {
-					origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom0, &opposite0, a0, a1, l1Buf0, leafEnd0, leafEnd1, &l1endBuf0, exhaust0);
+					if constexpr (external) origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom0, &opposite0, a0, a1, l1Buf0, leafEnd0, leafEnd1, &l1endBuf0, exhaust0, 0, IO);
+					else origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom0, &opposite0, a0, a1, l1Buf0, leafEnd0, leafEnd1, &l1endBuf0, exhaust0);
 					loadFrom = l1Buf0;
 				}
 				else if (exhaust1 < 2 && loadFrom == l1endBuf1) {
-					origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom1, &opposite1, a2, a3, l1Buf1, leafEnd2, leafEnd3, &l1endBuf1, exhaust1);
+					if constexpr (external) origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom1, &opposite1, a2, a3, l1Buf1, leafEnd2, leafEnd3, &l1endBuf1, exhaust1, 2, IO);
+					else origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom1, &opposite1, a2, a3, l1Buf1, leafEnd2, leafEnd3, &l1endBuf1, exhaust1);
 					loadFrom = l1Buf1;
 				}
 				bool first = *loadFrom < *opposite;
@@ -708,7 +910,7 @@ namespace origami_merge_tree {
 			this->a5 = a5;
 		}
 
-		void merge_leaf_to_internal(ui base_idx = 0) {
+		void merge_leaf_to_internal(ui base_idx = 0, origami_utils::IOHelper* IO = nullptr) {
 			constexpr ui ITEMS_PER_REG = sizeof(Reg) / sizeof(Item);
 			Item* loadFrom0 = this->loadFrom0;
 			Item* loadFrom1 = this->loadFrom1;
@@ -749,11 +951,13 @@ namespace origami_merge_tree {
 				//do {
 					// refill empty child
 				if (exhaust0 < 2 && loadFrom == l1endBuf0) {
-					origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom0, &opposite0, a0, a1, l1Buf0, leafEnd0, leafEnd1, &l1endBuf0, exhaust0);
+					if constexpr (external) origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom0, &opposite0, a0, a1, l1Buf0, leafEnd0, leafEnd1, &l1endBuf0, exhaust0, base_idx, IO);
+					else origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom0, &opposite0, a0, a1, l1Buf0, leafEnd0, leafEnd1, &l1endBuf0, exhaust0);
 					loadFrom = l1Buf0;
 				}
 				else if (exhaust1 < 2 && loadFrom == l1endBuf1) {
-					origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom1, &opposite1, a2, a3, l1Buf1, leafEnd2, leafEnd3, &l1endBuf1, exhaust1);
+					if constexpr (external) origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom1, &opposite1, a2, a3, l1Buf1, leafEnd2, leafEnd3, &l1endBuf1, exhaust1, base_idx + 2, IO);
+					else origami_merge_tree::merge_leaf_to_internal<Reg, Item>(&loadFrom1, &opposite1, a2, a3, l1Buf1, leafEnd2, leafEnd3, &l1endBuf1, exhaust1);
 					loadFrom = l1Buf1;
 				}
 				bool first = *(loadFrom) < *(opposite);
@@ -890,7 +1094,7 @@ namespace origami_merge_tree {
 			return flag;
 		}
 
-		ui merge_internal_to_root() {
+		ui merge_internal_to_root(origami_utils::IOHelper* IO = nullptr) {
 			constexpr ui ITEMS_PER_REG = sizeof(Reg) / sizeof(Item);
 			Item* loadFrom0 = this->loadFrom0;
 			Item* loadFrom1 = this->loadFrom1;
@@ -944,7 +1148,8 @@ namespace origami_merge_tree {
 				// from L1 to root
 
 				Item* o = output;
-				merge_root_aligned(&loadFrom, &opposite, a5, &output, l1endBuf0, l1endBuf1, exhaust4, exhaust5);
+				if constexpr (external) merge_root_unaligned(&loadFrom, &opposite, a5, &output, l1endBuf0, l1endBuf1, exhaust4, exhaust5, outputEnd, IO);
+				else merge_root_aligned(&loadFrom, &opposite, a5, &output, l1endBuf0, l1endBuf1, exhaust4, exhaust5);
 
 				//PRINT_ARR(o, output - o);
 
@@ -991,7 +1196,7 @@ namespace origami_merge_tree {
 			return flag;
 		}
 
-		ui merge_internal_to_root_unaligned(ui* prior_unalign_items) {
+		ui merge_internal_to_root_unaligned(ui* prior_unalign_items, origami_utils::IOHelper* IO = nullptr) {
 			constexpr ui ITEMS_PER_REG = sizeof(Reg) / sizeof(Item);
 			Item* loadFrom0 = this->loadFrom0;
 			Item* loadFrom1 = this->loadFrom1;
@@ -1079,7 +1284,8 @@ namespace origami_merge_tree {
 				// from L1 to root
 
 				Item* o = output;
-				merge_root_unaligned(&loadFrom, &opposite, a5, &output, l1endBuf0, l1endBuf1, exhaust4, exhaust5, outputEnd);
+				if constexpr (external) merge_root_unaligned(&loadFrom, &opposite, a5, &output, l1endBuf0, l1endBuf1, exhaust4, exhaust5, outputEnd, IO);
+				else merge_root_unaligned(&loadFrom, &opposite, a5, &output, l1endBuf0, l1endBuf1, exhaust4, exhaust5, outputEnd);
 
 				// check if any leaf node is empty
 				ui empty0 = (loadFrom0 == leafEnd0);// && (exhaust0 < 2);
@@ -2503,11 +2709,11 @@ public:
 
 
 	template <typename Reg, typename Item, bool external = false>
-	void RefillNode(Merge4Way<Reg, Item, external>** nodes, ui node_idx, ui level, ui LEVELS_4WAY, ui leaf_base = 0, ui buff_base = 0) {
+	void RefillNode(Merge4Way<Reg, Item, external>** nodes, ui node_idx, ui level, ui LEVELS_4WAY, ui leaf_base = 0, ui buff_base = 0, origami_utils::IOHelper* IO = nullptr) {
 		if (level == (LEVELS_4WAY - 1)) {		// leaf level
 			ui buf_idx = buff_base + ((node_idx - leaf_base) << 2);
 			//printf("Node idx: %lu, Buff base: %lu, Buf idx: %lu, Leaf base: %lu\n", node_idx, buff_base, buf_idx, leaf_base);
-			nodes[node_idx]->merge_leaf_to_internal(buf_idx);
+			nodes[node_idx]->merge_leaf_to_internal(buf_idx, IO);
 			return;
 		}
 
@@ -2523,7 +2729,7 @@ public:
 		while (j < 2) {
 			ui c_idx = c_idx_base + j;
 			if (((empty >> j) & 1) && (nodes[c_idx]->exhaust < 2)) {
-				RefillNode(nodes, c_idx, level + 1, LEVELS_4WAY, leaf_base, buff_base);
+				RefillNode(nodes, c_idx, level + 1, LEVELS_4WAY, leaf_base, buff_base, IO);
 				_loadFrom0 = nodes[c_idx]->output;
 
 				bool first = *_loadFrom0 < *_opposite0;
@@ -2536,7 +2742,7 @@ public:
 		while (j < 4) {
 			ui c_idx = c_idx_base + j;
 			if (((empty >> j) & 1) && (nodes[c_idx]->exhaust < 2)) {
-				RefillNode(nodes, c_idx, level + 1, LEVELS_4WAY, leaf_base, buff_base);
+				RefillNode(nodes, c_idx, level + 1, LEVELS_4WAY, leaf_base, buff_base, IO);
 				_loadFrom1 = nodes[c_idx]->output;
 
 				bool first = *_loadFrom1 < *_opposite1;
@@ -2565,9 +2771,9 @@ public:
 		ui LEVELS, LEAF_LEVEL, ROOT_LEVEL = 0;
 		ui LEVELS_4WAY, NODES;
 		ui prior_unalign_items = 0, post_unalign_items = 0;
-		//origami_utils::IOHelper* IO = nullptr;
+		origami_utils::IOHelper* IO = nullptr;
 
-		FORCEINLINE virtual void merge_init(ui WAY, Item* buf, ui buf_n, ui l2_buf_n) = 0;
+		FORCEINLINE virtual void merge_init(ui WAY, Item* buf, ui buf_n, ui l2_buf_n, origami_utils::IOHelper* _IO = nullptr) = 0;
 		FORCEINLINE virtual void merge_cleanup() = 0;
 		FORCEINLINE virtual void merge(Item* A, Item* C, ui64 chunk, ui buf_n, ui l2_buf_n, Item* buf, ui WAY) = 0;
 		FORCEINLINE virtual void merge(Item** _X, Item** _endX, Item* C, ui64 n, ui buf_n, ui l2_buf_n, Item* buf, ui WAY) = 0;
@@ -2576,7 +2782,7 @@ public:
 	template <typename Reg, typename Item, bool external = false>
 	class MergeTreeEven : public MergeTree<Reg, Item, external> {
 	public:
-		FORCEINLINE void merge_init(ui WAY, Item* buf, ui buf_n, ui l2_buf_n) {
+		FORCEINLINE void merge_init(ui WAY, Item* buf, ui buf_n, ui l2_buf_n, origami_utils::IOHelper* _IO = nullptr) {
 			this->LEVELS = (ui)(log2(WAY)) + 1;
 			this->LEAF_LEVEL = this->LEVELS - 1;
 			this->LEVELS_4WAY = this->LEVELS >> 1;
@@ -2608,6 +2814,8 @@ public:
 					}
 				}
 			}
+
+			this->IO = _IO;
 		}
 
 		FORCEINLINE void merge_cleanup() {
@@ -2615,8 +2823,7 @@ public:
 			delete[] this->nodes;
 		}
 
-		FORCEINLINE void merge(Item* A, Item* C, ui64 chunk, ui buf_n, ui l2_buf_n, Item* buf, ui WAY) 
-		{
+		FORCEINLINE void merge(Item* A, Item* C, ui64 chunk, ui buf_n, ui l2_buf_n, Item* buf, ui WAY) {
 			this->prior_unalign_items = 0;
 			this->post_unalign_items = 0;
 			//printf("Merging: [%llX %llX] to [%llX %llX], Tot: %llu\n", A, A + chunk * WAY, C, C + chunk * WAY, chunk * WAY);
@@ -2874,11 +3081,11 @@ public:
 
 			// Initialization
 			if (this->LEVELS_4WAY == 1)
-				nodes[0]->merge_leaf_to_root_init(0);
+				nodes[0]->merge_leaf_to_root_init(0, this->IO);
 			else if (this->LEVELS_4WAY == 2) {
 				FOR_INIT(i, 1, 5, 1) {
-					nodes[i]->merge_leaf_to_internal_init((i - 1) << 2);
-					nodes[i]->merge_leaf_to_internal((i - 1) << 2);
+					nodes[i]->merge_leaf_to_internal_init((i - 1) << 2, this->IO);
+					nodes[i]->merge_leaf_to_internal((i - 1) << 2, this->IO);
 					//printf("Internal node %lu contains: %llu; Exhaust: %lu\n", i, nodes[i]->outputEnd - nodes[i]->output, nodes[i]->exhaust);
 				}
 				// to handle the case when initilization empties out these nodes ** NOTE: need to add this to the following else condition
@@ -2894,8 +3101,8 @@ public:
 				ui leaf_base = this->NODES - (WAY >> 2);
 				FOR(i, nodes_last_level, 1) {
 					ui buf_idx = (idx - leaf_base) << 2;
-					nodes[idx]->merge_leaf_to_internal_init(buf_idx);
-					nodes[idx]->merge_leaf_to_internal(buf_idx);
+					nodes[idx]->merge_leaf_to_internal_init(buf_idx, this->IO);
+					nodes[idx]->merge_leaf_to_internal(buf_idx, this->IO);
 					ui pidx = (idx - 1) >> 2;
 					ui exhaust = nodes[idx]->exhaust;
 					Item* _outputEnd = nodes[idx]->outputEnd;
@@ -2954,14 +3161,14 @@ public:
 
 			// Merge 
 			if (this->LEVELS_4WAY == 1) {
-				nodes[0]->merge_leaf_to_root_unaligned(&this->prior_unalign_items);
+				nodes[0]->merge_leaf_to_root_unaligned(&this->prior_unalign_items, this->IO);
 				return;
 			}
 			ui empty = 0;
 			ui tot = 0;
 			//ui lcnt = 0;
 			while (nodes[0]->output < outputEnd) {
-				empty = nodes[0]->merge_internal_to_root_unaligned(&this->prior_unalign_items);
+				empty = nodes[0]->merge_internal_to_root_unaligned(&this->prior_unalign_items, this->IO);
 
 				Item* loadFrom0 = nodes[0]->loadFrom0;
 				Item* loadFrom1 = nodes[0]->loadFrom1;
@@ -2972,7 +3179,7 @@ public:
 				while (i < 2) {
 					ui cidx = i + 1;
 					if (((empty >> i) & 1) && (nodes[cidx]->exhaust < 2)) {
-						RefillNode<Reg, Item>(nodes, cidx, 1, this->LEVELS_4WAY, this->NODES - (WAY >> 2), 0);
+						RefillNode<Reg, Item>(nodes, cidx, 1, this->LEVELS_4WAY, this->NODES - (WAY >> 2), 0, this->IO);
 						loadFrom0 = nodes[cidx]->output;
 
 						bool first = *loadFrom0 < *opposite0;
@@ -2985,7 +3192,7 @@ public:
 				while (i < 4) {
 					ui cidx = i + 1;
 					if (((empty >> i) & 1) && (nodes[cidx]->exhaust < 2)) {
-						RefillNode<Reg, Item>(nodes, cidx, 1, this->LEVELS_4WAY, this->NODES - (WAY >> 2), 0);
+						RefillNode<Reg, Item>(nodes, cidx, 1, this->LEVELS_4WAY, this->NODES - (WAY >> 2), 0, this->IO);
 						loadFrom1 = nodes[cidx]->output;
 
 						bool first = *loadFrom1 < *opposite1;
@@ -3020,7 +3227,7 @@ public:
 		//ui LEVELS, LEAF_LEVEL, ROOT_LEVEL = 0;
 		//ui LEVELS_4WAY, NODES;
 
-		FORCEINLINE void merge_init(ui WAY, Item* buf, ui buf_n, ui l2_buf_n) override {
+		FORCEINLINE void merge_init(ui WAY, Item* buf, ui buf_n, ui l2_buf_n, origami_utils::IOHelper* _IO = nullptr) override {
 			Merge4Way<Reg, Item, external>** nodes_left = this->nodes;
 			Item** bufptrs1 = this->bufptrs, ** bufptrsEnd1 = this->bufptrsEnd;
 			const ui HALF_WAY = WAY >> 1;
@@ -3090,6 +3297,7 @@ public:
 			bufptrs2[0] = p1; bufptrsEnd2[0] = p1 + l2_buf_n;
 
 			this->nodes = nodes_left;
+			this->IO = _IO;
 		}
 
 		FORCEINLINE void merge_cleanup() override {
@@ -3511,17 +3719,17 @@ public:
 
 			// Initialization
 			if (this->LEVELS_4WAY == 1) {
-				nodes_left[0]->merge_leaf_to_internal_init(0);
-				nodes_left[0]->merge_leaf_to_internal(0);
-				nodes_right[0]->merge_leaf_to_internal_init(4);
-				nodes_right[0]->merge_leaf_to_internal(4);
+				nodes_left[0]->merge_leaf_to_internal_init(0, this->IO);
+				nodes_left[0]->merge_leaf_to_internal(0, this->IO);
+				nodes_right[0]->merge_leaf_to_internal_init(4, this->IO);
+				nodes_right[0]->merge_leaf_to_internal(4, this->IO);
 			}
 			else if (this->LEVELS_4WAY == 2) {
 				FOR_INIT(i, 1, 5, 1) {
-					nodes_left[i]->merge_leaf_to_internal_init((i - 1) << 2);
-					nodes_left[i]->merge_leaf_to_internal((i - 1) << 2);
-					nodes_right[i]->merge_leaf_to_internal_init(HALF_WAY + ((i - 1) << 2));
-					nodes_right[i]->merge_leaf_to_internal(HALF_WAY + ((i - 1) << 2));
+					nodes_left[i]->merge_leaf_to_internal_init((i - 1) << 2, this->IO);
+					nodes_left[i]->merge_leaf_to_internal((i - 1) << 2, this->IO);
+					nodes_right[i]->merge_leaf_to_internal_init(HALF_WAY + ((i - 1) << 2), this->IO);
+					nodes_right[i]->merge_leaf_to_internal(HALF_WAY + ((i - 1) << 2), this->IO);
 					//printf("Internal node contains: %llu; Exhaust: %lu\n", nodes[i]->outputEnd - nodes[i]->output, nodes[i]->exhaust);
 				}
 				// to handle the case when initilization empties out these nodes ** NOTE: need to add this to the following else condition
@@ -3546,10 +3754,10 @@ public:
 				ui leaf_base = this->NODES - (HALF_WAY >> 2);
 				FOR(i, nodes_last_level, 1) {
 					ui buf_idx =(idx - leaf_base) << 2;
-					nodes_left[idx]->merge_leaf_to_internal_init(buf_idx);
-					nodes_left[idx]->merge_leaf_to_internal(buf_idx);
-					nodes_right[idx]->merge_leaf_to_internal_init(HALF_WAY + buf_idx);
-					nodes_right[idx]->merge_leaf_to_internal(HALF_WAY + buf_idx);
+					nodes_left[idx]->merge_leaf_to_internal_init(buf_idx, this->IO);
+					nodes_left[idx]->merge_leaf_to_internal(buf_idx, this->IO);
+					nodes_right[idx]->merge_leaf_to_internal_init(HALF_WAY + buf_idx, this->IO);
+					nodes_right[idx]->merge_leaf_to_internal(HALF_WAY + buf_idx, this->IO);
 
 					if (idx > 0) {		// we have more than one node i.e. this node has some parent
 						ui pidx = (idx - 1) >> 2;
@@ -3648,12 +3856,12 @@ public:
 				if (this->prior_unalign_items == 0) break;
 
 				if (loadFrom == endA && root_left->exhaust < 2) {
-					RefillNode<Reg, Item>(nodes_left, 0, 0, this->LEVELS_4WAY, this->NODES - (HALF_WAY >> 2), 0);
+					RefillNode<Reg, Item>(nodes_left, 0, 0, this->LEVELS_4WAY, this->NODES - (HALF_WAY >> 2), 0, this->IO);
 					loadFrom = root_left->output;
 					endA = root_left->outputEnd;
 				}
 				else if (loadFrom == endB && root_right->exhaust < 2) {
-					RefillNode<Reg, Item>(nodes_right, 0, 0, this->LEVELS_4WAY, this->NODES - (HALF_WAY >> 2), HALF_WAY);
+					RefillNode<Reg, Item>(nodes_right, 0, 0, this->LEVELS_4WAY, this->NODES - (HALF_WAY >> 2), HALF_WAY, this->IO);
 					loadFrom = root_right->output;
 					endB = root_right->outputEnd;
 				}
@@ -3664,17 +3872,17 @@ public:
 			}
 
 			while (1) {
-				if constexpr (external) merge_root_unaligned(&loadFrom, &opposite, a1, &output, endA, endB, root_left->exhaust, root_right->exhaust, outputEnd);
+				if constexpr (external) merge_root_unaligned(&loadFrom, &opposite, a1, &output, endA, endB, root_left->exhaust, root_right->exhaust, outputEnd, this->IO);
 				else merge_root_unaligned(&loadFrom, &opposite, a1, &output, endA, endB, root_left->exhaust, root_right->exhaust, outputEnd);
 
 				if (output >= outputEnd) break;
 				if (loadFrom == endA && root_left->exhaust < 2) {
-					RefillNode<Reg, Item>(nodes_left, 0, 0, this->LEVELS_4WAY, this->NODES - (HALF_WAY >> 2), 0);
+					RefillNode<Reg, Item>(nodes_left, 0, 0, this->LEVELS_4WAY, this->NODES - (HALF_WAY >> 2), 0, this->IO);
 					loadFrom = root_left->output;
 					endA = root_left->outputEnd;
 				}
 				else if (loadFrom == endB && root_right->exhaust < 2) {
-					RefillNode<Reg, Item>(nodes_right, 0, 0, this->LEVELS_4WAY, this->NODES - (HALF_WAY >> 2), HALF_WAY);
+					RefillNode<Reg, Item>(nodes_right, 0, 0, this->LEVELS_4WAY, this->NODES - (HALF_WAY >> 2), HALF_WAY, this->IO);
 					loadFrom = root_right->output;
 					endB = root_right->outputEnd;
 				}

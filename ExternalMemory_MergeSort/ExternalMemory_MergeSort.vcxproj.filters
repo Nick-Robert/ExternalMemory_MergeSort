@@ -33,6 +33,9 @@
     <ClCompile Include="v3_es.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="v5_es.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MinHeap.h">
@@ -81,6 +84,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="writer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="external_sorter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
