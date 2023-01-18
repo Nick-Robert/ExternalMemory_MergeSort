@@ -59,6 +59,7 @@ namespace origami_external_sorter {
 
 			// initialize file ptrs
 			init_file_ptrs(_input_file, sort_size_bytes / WAY, _output_file);
+			CloseHandle(h_read);
 		}
 
 		~ExternalMemorySort() {

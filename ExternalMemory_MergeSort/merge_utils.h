@@ -105,6 +105,7 @@ namespace origami_utils {
 			FOR(i, num_f_handles, 1) 
 				CloseHandle(fp_in[i]);
 			delete[] bytes_left;
+			CloseHandle(fp_out[0]);
 		}
 
 		void init_buffers(char* buf, ui WAY, ui64 mem_size) {
