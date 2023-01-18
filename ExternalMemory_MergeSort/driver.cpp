@@ -89,19 +89,19 @@ int main(int argc, char** argv)
 
     //unsigned long long fs_max =  16 * ((static_cast<unsigned long long>(1) << 30)) / sizeof(Itemtype);          // 8 GB
     // mem_avail = static_cast<unsigned long long>(1) << (unsigned)log2(mem_avail);
-    unsigned long long fs_max = static_cast<unsigned long long>(1) << (unsigned)log2(free_ds.QuadPart / (3 * sizeof(Itemtype)));
+    unsigned long long fs_max = 1LLU << (unsigned)log2(free_ds.QuadPart / (3 * sizeof(Itemtype)));
     //printf("    fs_max = %llu\n", fs_max);
 
-    unsigned long long ms_max = 2 * (static_cast<unsigned long long>(1) << 30) / sizeof(Itemtype);          // 2 GB
+    unsigned long long ms_max = (1LLU << 30) / sizeof(Itemtype);          // 2 GB
     unsigned long long fs_start, ms_start;
 
     ms_start = ms_max;
     fs_start = fs_max;
     //fs_start = 2 * (static_cast<unsigned long long>(1) << 30) / sizeof(Itemtype);                                  // 1 GB
-    fs_start = (static_cast<unsigned long long>(1) << 20) / sizeof(Itemtype);                                  // 1 GB
+    fs_start = 1LLU << 10 / sizeof(Itemtype);                                  
     //ms_start = 100 * (static_cast<unsigned long long>(1) << 20) / sizeof(Itemtype)/*(static_cast<unsigned long long>(1) << 20) / sizeof(Itemtype)*/;                               // 100 MB
     //fs = fs_start;
-    fs = static_cast<unsigned long long>(1) << 10;
+    fs = fs_start;
     ms = ms_start;
     unsigned num_fs_iterations = 0, num_ms_iterations = 0, number_iterations = 0;
     while (fs <= fs_max) {
