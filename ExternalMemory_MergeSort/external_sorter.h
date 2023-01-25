@@ -97,7 +97,7 @@ namespace origami_external_sorter {
 			in_memory_sort();
 		}
 		
-		void mtree_bench(ui WAY) {
+		void mtree_bench(ui WAY, ui* num_seeks_ptr) {
 			// merge
 			init_buffers(WAY);
 
@@ -114,7 +114,7 @@ namespace origami_external_sorter {
 			hrc::time_point s, e;
 			s = hrc::now();
 			FOR(i, WAY, 1)
-				IO.fill_buffer(i);
+				IO.fill_buffer(i, num_seeks_ptr);
 			kway_tree->merge((Item**)IO.X, (Item**)IO.endX, (Item*)IO.out, (IO.out_buff_size / sizeof(Item)), l1_buff_n, l2_buff_n, (Item*)treebuf, WAY);
 			e = hrc::now();
 			double el = ELAPSED_MS(s, e);

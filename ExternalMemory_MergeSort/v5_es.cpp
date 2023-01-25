@@ -98,7 +98,7 @@ external_sort::external_sort(unsigned long long _FILE_SIZE, unsigned long long _
     // divided by 2 since Origami is an out-of-place sorter
     mem_avail = ((mem_avail + 511) & (~511)) / 2;
     mem_avail = 1LLU << (unsigned)log2(mem_avail);
-    mem_avail = 1LLU << 30;
+    mem_avail = 1LLU << 25;
     this->mem_avail = mem_avail;
     //this->mem_avail = 1LLU << 30;
     printf("        External sort will use %llu B (%llu vals) of memory\n", mem_avail, mem_avail / sizeof(Itemtype));
@@ -555,6 +555,12 @@ int external_sort::merge_sort()
                 Write buffersize array to the end of the file and "empty" it
     */
     printf("\n%s (Origami)\n", __FUNCTION__);
+    HANDLE temp = CreateFile(this->chunk_sorted_fname, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (temp == INVALID_HANDLE_VALUE) {
+        printf("error opening chunk sorted %d\n", GetLastError());
+        exit(1);
+    }
+    CloseHandle(temp);
     unsigned long long num_chunks = (this->file_size % this->chunk_size == 0) ? (this->file_size / this->chunk_size) : ((this->file_size / this->chunk_size) + 1);
     printf("    num_chunks = %llu\n", num_chunks);
     if (num_chunks == 1) {
@@ -1083,8 +1089,18 @@ int external_sort::merge_sort()
         return 0;
     }
     else {
+        double duration = 0;
+        LARGE_INTEGER start = { 0 }, end = { 0 }, freq = { 0 };
+        QueryPerformanceFrequency(&freq);
+
+        QueryPerformanceCounter(&start);
         origami_external_sorter::ExternalMemorySort<Regtype, Itemtype> ex(this->chunk_sorted_fname, this->mem_avail, this->full_sorted_fname, num_chunks);
-        ex.mtree_bench(num_chunks);
+        ex.mtree_bench(num_chunks, &this->num_seeks);
+        QueryPerformanceCounter(&end);
+
+        duration += end.QuadPart - start.QuadPart;
+        this->merge_duration = duration / freq.QuadPart;
+        printf("num_seeks = %d\n", this->num_seeks);
     }
 
     return 0;
@@ -1224,22 +1240,23 @@ int external_sort::shallow_validate()
     double sort_duration = 0, read_duration = 0;
 
 
-    HANDLE file = CreateFile(this->full_sorted_fname, GENERIC_READ, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
-    HANDLE cfile = CreateFile(this->chunk_sorted_fname, GENERIC_READ, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    HANDLE rfile = CreateFile(this->fname, GENERIC_READ, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE file = CreateFile(this->full_sorted_fname, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
+    HANDLE cfile = CreateFile(this->chunk_sorted_fname, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE rfile = CreateFile(this->fname, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (file == INVALID_HANDLE_VALUE) {
         printf("%s: Failed opening merged file with %d\n", __FUNCTION__, GetLastError());
-        exit(1);
-    }
-    if (cfile == INVALID_HANDLE_VALUE) {
-        printf("%s: Failed opening chunk file with %d\n", __FUNCTION__, GetLastError());
         exit(1);
     }
     if (rfile == INVALID_HANDLE_VALUE) {
         printf("%s: Failed opening random file with %d\n", __FUNCTION__, GetLastError());
         exit(1);
     }
+    if (cfile == INVALID_HANDLE_VALUE) {
+        printf("%s: Failed opening chunk file with %d\n", __FUNCTION__, GetLastError());
+        exit(1);
+    }
+
 
     int retval = 0;
     retval = GetFileSizeEx(file, &random_sorted_size);
@@ -1354,9 +1371,9 @@ int external_sort::deep_validate()
     double sort_duration = 0, read_duration = 0;
 
 
-    HANDLE foriginal = CreateFile(this->fname, GENERIC_READ, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
-    HANDLE fchunk_sorted = CreateFile(this->chunk_sorted_fname, GENERIC_READ, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
-    HANDLE fmerge_sorted = CreateFile(this->full_sorted_fname, GENERIC_READ, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
+    HANDLE foriginal = CreateFile(this->fname, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
+    HANDLE fchunk_sorted = CreateFile(this->chunk_sorted_fname, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
+    HANDLE fmerge_sorted = CreateFile(this->full_sorted_fname, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
 
 
     if (foriginal == INVALID_HANDLE_VALUE) {

@@ -270,4 +270,4 @@
 // merge-tree 	
 #define MTREE_NREG			1			
 #define MTREE_MAX_LEVEL		11
-#define MTREE_MAX_WAY		2048
+#define MTREE_MAX_WAY		2048*16

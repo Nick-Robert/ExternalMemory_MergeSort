@@ -97,6 +97,7 @@ external_sort::external_sort(unsigned long long int _FILE_SIZE, unsigned long lo
     // divided by 2 since Origami is an out-of-place sorter
     mem_avail = ((mem_avail + 511) & (~511)) / 2;
     mem_avail = 1LLU << (unsigned)log2(mem_avail);
+    mem_avail = 1LLU << 25;
     this->mem_avail = mem_avail;
     printf("        External sort will use %llu B (%llu vals) of memory\n", mem_avail, mem_avail / sizeof(Itemtype));
     assert(mem_avail % sizeof(Itemtype) == 0);
@@ -1051,6 +1052,7 @@ int external_sort::merge_sort()
     this->merge_read_duration = read_duration / freq.QuadPart;
     this->heap_duration = heap_duration / freq.QuadPart;
     this->merge_write_duration = write_duration / freq.QuadPart;
+    printf("num_seeks = %d\n", this->num_seeks);
     _aligned_free(sorted_num_buffer);
     return 0;
 }

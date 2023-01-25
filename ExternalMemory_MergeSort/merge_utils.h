@@ -130,7 +130,7 @@ namespace origami_utils {
 		}
 
 		// callback function when some leaf node buffer is empty
-		void fill_buffer(ui idx) {
+		void fill_buffer(ui idx, ui* num_seeks_ptr) {
 #ifdef _DEBUG
 			printf("Filling buffer for node: %lu ...", idx);
 #endif 
@@ -140,6 +140,10 @@ namespace origami_utils {
 			char* p = X[idx];
 			ui64 tot_bytes_read = 0;
 			DWORD max_read = 4294967295;
+			if (num_seeks_ptr != nullptr)
+			{
+				(*num_seeks_ptr)++;
+			}
 			while (bytes > 0) {
 				DWORD bytes_to_read = min(max_read, bytes);
 				BOOL bRet = ReadFile(

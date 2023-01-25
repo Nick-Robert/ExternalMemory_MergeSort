@@ -110,7 +110,7 @@ namespace origami_merge_tree {
 					ui empty_idx = (loadFrom == endA) ? base_idx : (base_idx + 1);
 					//printf("Buffer %lu empty\n", empty_idx);
 					if (IO->bytes_left[empty_idx] > 0) {
-						IO->fill_buffer(empty_idx);
+						IO->fill_buffer(empty_idx, nullptr);
 						loadFrom = (Item*)IO->X[empty_idx];
 					}
 					else {
@@ -136,7 +136,7 @@ namespace origami_merge_tree {
 					// refill opposite buffer
 					//printf("Buffer %lu empty\n", opposite_idx);
 					if (IO->bytes_left[opposite_idx] > 0) {
-						IO->fill_buffer(opposite_idx);
+						IO->fill_buffer(opposite_idx, nullptr);
 						opposite = (Item*)IO->X[opposite_idx];
 					}
 					else {
