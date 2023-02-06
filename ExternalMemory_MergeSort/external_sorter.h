@@ -115,7 +115,7 @@ namespace origami_external_sorter {
 			s = hrc::now();
 			FOR(i, WAY, 1)
 				IO.fill_buffer(i, num_seeks_ptr);
-			kway_tree->merge((Item**)IO.X, (Item**)IO.endX, (Item*)IO.out, (IO.out_buff_size / sizeof(Item)), l1_buff_n, l2_buff_n, (Item*)treebuf, WAY);
+			kway_tree->merge((Item**)IO.X, (Item**)IO.endX, (Item*)IO.out, (IO.out_buff_size / sizeof(Item)), l1_buff_n, l2_buff_n, (Item*)treebuf, WAY, num_seeks_ptr);
 			e = hrc::now();
 			double el = ELAPSED_MS(s, e);
 			printf("done in %.2f ms @ %.2f M/s\n", el, (sort_size_bytes / sizeof(Item)) / el / 1e3);

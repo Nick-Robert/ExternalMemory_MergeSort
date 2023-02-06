@@ -89,12 +89,13 @@ int main(int argc, char** argv)
 
     //unsigned long long fs_max =  16 * ((static_cast<unsigned long long>(1) << 30)) / sizeof(Itemtype);          // 8 GB
     // mem_avail = static_cast<unsigned long long>(1) << (unsigned)log2(mem_avail);
-    unsigned long long fs_max = 1LLU << (unsigned)log2(free_ds.QuadPart / (3 * sizeof(Itemtype)));
+    //unsigned long long fs_max = 1LLU << (unsigned)log2(free_ds.QuadPart / (3 * sizeof(Itemtype)));
+    unsigned long long fs_max = 1LLU << 26;
 
-    unsigned long long ms_max = (1LLU << 30) / sizeof(Itemtype);          // 2 GB
+    //unsigned long long ms_max = (1LLU << 30) / sizeof(Itemtype);          // 2 GB
     unsigned long long fs_start, ms_start;
 
-    ms_start = ms_max;
+    //ms_start = ms_max;
     fs_start = fs_max;
     //fs_start = 2 * (static_cast<unsigned long long>(1) << 30) / sizeof(Itemtype);                                  // 1 GB
     fs_start = 1LLU << 30 / sizeof(Itemtype);     
@@ -130,16 +131,16 @@ int main(int argc, char** argv)
             extsrt.generate_averages();
 
             //extsrt.print_metrics();
-            if (ms * 2 <= ms_max && curr_itr != 0)
+            /*if (ms * 2 <= ms_max && curr_itr != 0)
             {
                 extsrt.save_metrics();
             }
             else if (ms*2 > ms_max && curr_itr != 0) {
                 extsrt.save_metrics(false, true);
             }
-            else {
+            else {*/
                 extsrt.save_metrics(true, false);
-            }
+            //}
 
             extsrt.shallow_validate();
 

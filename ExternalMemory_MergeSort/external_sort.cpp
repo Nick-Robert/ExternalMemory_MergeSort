@@ -98,7 +98,7 @@ external_sort::external_sort(unsigned long long _FILE_SIZE, unsigned long long _
     // divided by 2 since Origami is an out-of-place sorter
     mem_avail = ((mem_avail + 511) & (~511)) / 2;
     mem_avail = 1LLU << (unsigned)log2(mem_avail);
-    mem_avail = 1LLU << 25;
+    mem_avail = 1LLU << 20;
     this->mem_avail = mem_avail;
     //this->mem_avail = 1LLU << 30;
     printf("        External sort will use %llu B (%llu vals) of memory\n", mem_avail, mem_avail / sizeof(Itemtype));
