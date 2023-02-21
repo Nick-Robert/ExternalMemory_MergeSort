@@ -1,17 +1,3 @@
-/*
-    512 1
-    262144 1
-    524288
-    2883584 1
-    268435456 1
-    268697600 1
-    1073741824 1
-    1342177280 1
-    2147483648 (8 GB)
-    2684354560 1
-    4294967296 (16 GB)
-    
-*/
 #include <stdio.h>      
 #include <windows.h>
 #include "external_sort.h"
@@ -44,15 +30,21 @@ int main(int argc, char** argv)
     // lowest this can be is (static_cast<unsigned long long>(1) << 9) / sizeof(unsigned int); since it results in 512 bytes
     // MUST BE A MULTIPLE OF 512
     unsigned long long int ms = (static_cast<unsigned long long>(1) << 30) / sizeof(Itemtype);
-
+    bool seq_run = true;
     //unsigned int BUFFER_SIZE = (1<<20) / sizeof(unsigned int);
-    char fname[] = "output_files\\test.bin";
+    char seq_fname[] = "D:\\large_file.dat";
+    char fname[] = "D:\\output_files\\test.bin";
+    char chunk_sorted_fname[] = "D:\\output_files\\sorted_test.bin";
+    char full_sorted_fname[] = "D:\\output_files\\merge_test.bin";
+    char metric_file_fname[] = "D:\\output_files\\BENCH_origami_external_6TB.csv";
+    //char metric_file_fname[] = "D:\\output_files\\BENCH_minheap_external_6TB.csv";
+    /*char fname[] = "output_files\\test.bin";
     char chunk_sorted_fname[] = "output_files\\sorted_test.bin";
     char full_sorted_fname[] = "output_files\\merge_test.bin";
-    char metric_file_fname[] = "output_files\\benchmarks.csv";
+    char metric_file_fname[] = "output_files\\benchmarks.csv";*/
     DeleteFile(metric_file_fname);
 
-    bool TEST_SORT = false;
+    bool TEST_SORT = true;
     bool GIVE_VALS = false;
     bool DEBUG = false;
     if (argc == 3) {
@@ -66,7 +58,8 @@ int main(int argc, char** argv)
 
     unsigned long bytes_per_sector;
     unsigned long num_free_sectors;
-    BOOL succeeded = GetDiskFreeSpaceA(NULL, NULL, &bytes_per_sector, &num_free_sectors, NULL);
+    //BOOL succeeded = GetDiskFreeSpaceA(NULL, NULL, &bytes_per_sector, &num_free_sectors, NULL);
+    BOOL succeeded = GetDiskFreeSpaceA("D:\\", NULL, &bytes_per_sector, &num_free_sectors, NULL);
     if (!succeeded) {
         printf("__FUNCTION__main(): Failed getting disk information with %d\n", GetLastError());
         return 1;
@@ -82,29 +75,60 @@ int main(int argc, char** argv)
 
     ULARGE_INTEGER free_ds = { 0 };
 
-    succeeded = GetDiskFreeSpaceEx(NULL, NULL, NULL, &free_ds);
+    succeeded = GetDiskFreeSpaceEx("D:\\output_files", NULL, NULL, &free_ds);
     if (!succeeded) {
         printf("driver: Failed getting disk information with %d\n", GetLastError());
     }
 
     //unsigned long long fs_max =  16 * ((static_cast<unsigned long long>(1) << 30)) / sizeof(Itemtype);          // 8 GB
     // mem_avail = static_cast<unsigned long long>(1) << (unsigned)log2(mem_avail);
-    //unsigned long long fs_max = 1LLU << (unsigned)log2(free_ds.QuadPart / (3 * sizeof(Itemtype)));
-    unsigned long long fs_max = 1LLU << 26;
+    //unsigned long long seq_fs_size = 0;
+
+    unsigned long long fs_max = 0;
+    /*LARGE_INTEGER seq_fs_size = {0};
+    if (seq_run)
+    {
+        HANDLE temp = CreateFile(seq_fname, GENERIC_READ, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        if (temp == INVALID_HANDLE_VALUE) {
+            printf("%s: Failed opening large file with %d\n", __FUNCTION__, GetLastError());
+            exit(1);
+        }
+        int retval = GetFileSizeEx(temp, &seq_fs_size);
+        printf("seq_fs_size.QuadPart = %llu\n", fs_max);
+        if (retval == 0)
+        {
+            printf("%s: Failed getting file size for large file with %d\n", __FUNCTION__, GetLastError());
+            exit(1);
+        }
+        CloseHandle(temp);
+        fs_max = 1LLU << (unsigned)log2(seq_fs_size.QuadPart / (3 * sizeof(Itemtype)));
+    }
+    else {
+        fs_max = 1LLU << (unsigned)log2(free_ds.QuadPart / (3 * sizeof(Itemtype)));
+    }
+    printf("seq_fs_size.QuadPart = %llu\n", seq_fs_size.QuadPart);*/
+
+    //fs_max = 1LLU << (unsigned)log2(free_ds.QuadPart / (3 * sizeof(Itemtype)));
+    fs_max = 1LLU << (unsigned)log2(7340204097536LLU / (3 * sizeof(Itemtype)));
+
+    //unsigned long long fs_max = 1LLU << 26;
+    printf("fs_max = %llu\n", fs_max);
 
     //unsigned long long ms_max = (1LLU << 30) / sizeof(Itemtype);          // 2 GB
-    unsigned long long fs_start, ms_start;
+    unsigned long long fs_start;// , ms_start;
 
     //ms_start = ms_max;
     fs_start = fs_max;
     //fs_start = 2 * (static_cast<unsigned long long>(1) << 30) / sizeof(Itemtype);                                  // 1 GB
-    fs_start = 1LLU << 30 / sizeof(Itemtype);     
+    fs_start = (1LLU << 20) / sizeof(Itemtype);
+    fs_start = 512 / sizeof(Itemtype);
+    //268435456
+    fs_start = 268435456 * 2LLU;
+    //fs_start = 524288;
     //printf("    fs_max = %llu\n", fs_max);
     //printf("    fs_start = %llu\n", fs_start);
 
     //ms_start = 100 * (static_cast<unsigned long long>(1) << 20) / sizeof(Itemtype)/*(static_cast<unsigned long long>(1) << 20) / sizeof(Itemtype)*/;                               // 100 MB
-    //fs = fs_start;
-    //fs = fs_start;
     //ms = ms_start;
     fs = fs_start;
     unsigned num_fs_iterations = 0, num_ms_iterations = 0, number_iterations = 0;
@@ -119,17 +143,41 @@ int main(int argc, char** argv)
 
 
     number_iterations = num_fs_iterations;// *num_ms_iterations;
+    printf("fs_start = %llu\n", fs_start);
 
     unsigned itr = 0;
     unsigned curr_itr = 0;
+    // lowest fs can be is 512 bytes (may be lower bounded by something else too)
     for (fs = fs_start; fs <= fs_max; fs *= 2) {
         //for (ms = ms_start; ms <= ms_max; ms *= 2) {
             itr++;
             //printf("Iteration %u / %u: fs = %llu, ms = %llu\n", itr, number_iterations, fs, ms);
-            printf("Iteration %u / %u: fs = %llu B (%llu vals)\n", itr, number_iterations, fs * sizeof(Itemtype), fs);
-            external_sort extsrt(fs, ms, fname, chunk_sorted_fname, full_sorted_fname, metric_file_fname, num_runs, TEST_SORT, GIVE_VALS, DEBUG);
-            extsrt.generate_averages();
+            printf("Iteration %u / %u: fs = %llu B (%llu MB) (%llu vals)\n", itr, number_iterations, fs * sizeof(Itemtype), fs * sizeof(Itemtype) / (1LLU << 20), fs);
+            if (seq_run) {
+                external_sort extsrt(fs, ms, seq_fname, seq_fname, seq_fname, metric_file_fname, num_runs, TEST_SORT, GIVE_VALS, DEBUG);
+                extsrt.generate_averages();
+                extsrt.save_metrics(true, false);
+                extsrt.shallow_validate();
+                if (fs <= 2621440) {
+                    extsrt.deep_validate();
+                }
+                printf("\n");
+            }
+            else
+            {
+                external_sort extsrt(fs, ms, fname, chunk_sorted_fname, full_sorted_fname, metric_file_fname, num_runs, TEST_SORT, GIVE_VALS, DEBUG);
+                extsrt.generate_averages();
+                extsrt.save_metrics(true, false);
+                extsrt.shallow_validate();
+                if (fs <= 2621440) {
+                    extsrt.deep_validate();
+                }
+                printf("\n");
+                DeleteFile(fname);
+                DeleteFile(chunk_sorted_fname);
+                DeleteFile(full_sorted_fname);
 
+            }
             //extsrt.print_metrics();
             /*if (ms * 2 <= ms_max && curr_itr != 0)
             {
@@ -139,18 +187,10 @@ int main(int argc, char** argv)
                 extsrt.save_metrics(false, true);
             }
             else {*/
-                extsrt.save_metrics(true, false);
             //}
 
-            extsrt.shallow_validate();
 
-            if (fs <= 2621440) {
-                extsrt.deep_validate();
-            }
-            printf("\n");
-            DeleteFile(fname);
-            DeleteFile(chunk_sorted_fname);
-            DeleteFile(full_sorted_fname);
+            
         //}
         curr_itr = 0;
     }

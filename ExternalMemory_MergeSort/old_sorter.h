@@ -36,7 +36,7 @@ namespace origami_sorter {
 		origami_utils::swap<Reg, Item>(a0, a1); origami_utils::swap<Reg, Item>(a2, a3);
 		origami_utils::swap<Reg, Item>(a1, a2);
 	}
-
+	
 	template <typename Item, typename Reg>
 	FORCEINLINE void in_register_sort8(Reg& a0, Reg& a1, Reg& a2, Reg& a3, Reg& a4, Reg& a5, Reg& a6, Reg& a7) {
 		origami_utils::swap<Reg, Item>(a0, a4);	origami_utils::swap<Reg, Item>(a1, a5);	origami_utils::swap<Reg, Item>(a2, a6);	origami_utils::swap<Reg, Item>(a3, a7);
@@ -58,7 +58,7 @@ namespace origami_sorter {
 	}
 
 	template <typename Item, typename Reg>
-	FORCEINLINE void in_register_sort16(Reg& a0, Reg& a1, Reg& a2, Reg& a3, Reg& a4, Reg& a5, Reg& a6, Reg& a7,
+	FORCEINLINE void in_register_sort16(Reg& a0, Reg& a1, Reg& a2, Reg& a3, Reg& a4, Reg& a5, Reg& a6, Reg& a7, 
 		Reg& a8, Reg& a9, Reg& a10, Reg& a11, Reg& a12, Reg& a13, Reg& a14, Reg& a15) {
 		origami_utils::swap<Reg, Item>(a0, a1);	origami_utils::swap<Reg, Item>(a2, a3);	origami_utils::swap<Reg, Item>(a4, a5);	origami_utils::swap<Reg, Item>(a6, a7);	origami_utils::swap<Reg, Item>(a8, a9);	origami_utils::swap<Reg, Item>(a10, a11);	origami_utils::swap<Reg, Item>(a12, a13);	origami_utils::swap<Reg, Item>(a14, a15);	origami_utils::swap<Reg, Item>(a0, a2);	origami_utils::swap<Reg, Item>(a4, a6);	origami_utils::swap<Reg, Item>(a8, a10);	origami_utils::swap<Reg, Item>(a12, a14);	origami_utils::swap<Reg, Item>(a1, a3);	origami_utils::swap<Reg, Item>(a5, a7);	origami_utils::swap<Reg, Item>(a9, a11);	origami_utils::swap<Reg, Item>(a13, a15);	origami_utils::swap<Reg, Item>(a0, a4);	origami_utils::swap<Reg, Item>(a8, a12);	origami_utils::swap<Reg, Item>(a1, a5);	origami_utils::swap<Reg, Item>(a9, a13);	origami_utils::swap<Reg, Item>(a2, a6);	origami_utils::swap<Reg, Item>(a10, a14);	origami_utils::swap<Reg, Item>(a3, a7);	origami_utils::swap<Reg, Item>(a11, a15);	origami_utils::swap<Reg, Item>(a0, a8);	origami_utils::swap<Reg, Item>(a1, a9);	origami_utils::swap<Reg, Item>(a2, a10);	origami_utils::swap<Reg, Item>(a3, a11);	origami_utils::swap<Reg, Item>(a4, a12);	origami_utils::swap<Reg, Item>(a5, a13);	origami_utils::swap<Reg, Item>(a6, a14);	origami_utils::swap<Reg, Item>(a7, a15);	origami_utils::swap<Reg, Item>(a5, a10);	origami_utils::swap<Reg, Item>(a6, a9);	origami_utils::swap<Reg, Item>(a3, a12);	origami_utils::swap<Reg, Item>(a13, a14);	origami_utils::swap<Reg, Item>(a7, a11);	origami_utils::swap<Reg, Item>(a1, a2);	origami_utils::swap<Reg, Item>(a4, a8);	origami_utils::swap<Reg, Item>(a1, a4);	origami_utils::swap<Reg, Item>(a7, a13);	origami_utils::swap<Reg, Item>(a2, a8);	origami_utils::swap<Reg, Item>(a11, a14);	origami_utils::swap<Reg, Item>(a2, a4);	origami_utils::swap<Reg, Item>(a5, a6);	origami_utils::swap<Reg, Item>(a9, a10);	origami_utils::swap<Reg, Item>(a11, a13);	origami_utils::swap<Reg, Item>(a3, a8);	origami_utils::swap<Reg, Item>(a7, a12);
 		origami_utils::swap<Reg, Item>(a6, a8);	origami_utils::swap<Reg, Item>(a10, a12);	origami_utils::swap<Reg, Item>(a3, a5);	origami_utils::swap<Reg, Item>(a7, a9);	origami_utils::swap<Reg, Item>(a3, a4);	origami_utils::swap<Reg, Item>(a5, a6);	origami_utils::swap<Reg, Item>(a7, a8);	origami_utils::swap<Reg, Item>(a9, a10);	origami_utils::swap<Reg, Item>(a11, a12);	origami_utils::swap<Reg, Item>(a6, a7);	origami_utils::swap<Reg, Item>(a8, a9);
@@ -1619,7 +1619,7 @@ namespace origami_sorter {
 	}
 
 
-
+	
 	// ----------------------
 	// in-register merges
 
@@ -1655,7 +1655,7 @@ namespace origami_sorter {
 		origami_utils::shuffle<Reg, Itemsize>(a10);	origami_utils::shuffle<Reg, Itemsize>(a11);
 		origami_utils::shuffle<Reg, Itemsize>(a12);	origami_utils::shuffle<Reg, Itemsize>(a13);
 		origami_utils::shuffle<Reg, Itemsize>(a14);	origami_utils::shuffle<Reg, Itemsize>(a15);
-
+		
 		origami_utils::cswap<Reg, Item>(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15);
 
 		origami_utils::shuffle<Reg, Itemsize>(a8);	origami_utils::shuffle<Reg, Itemsize>(a9);
@@ -1745,11 +1745,11 @@ namespace origami_sorter {
 	FORCEINLINE void mcmerge64x64(Reg& a0, Reg& a1, Reg& a2, Reg& a3, Reg& a4, Reg& a5, Reg& a6, Reg& a7, Reg& a8, Reg& a9, Reg& a10, Reg& a11, Reg& a12, Reg& a13, Reg& a14, Reg& a15) {
 		if constexpr (sizeof(Reg) * 16 < sizeof(Item) * 128)
 			ReportError("mcmerge64x64: invalid register and item type");
-
+		
 		// NOTE: valid only for AVX2 + 32, AVX512 + 64 + 128
 
 		constexpr ui Itemsize = sizeof(Item) << 3;	// in bits
-
+		
 		/*
 		Network:
 		(0, 8); (1, 9); (2, 10); (3, 11); (4, 12); (5, 13); (6, 14); (7, 15);
@@ -1781,7 +1781,7 @@ namespace origami_sorter {
 
 		// Step 2: first level of MN16
 		origami_utils::cswap<Reg, Item>(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15);
-
+		
 		// Step 3: permute for 2nd level of SN16
 		// we want to compare: (4, 8), (5, 9), (6, 10), (7, 11)
 		// in this case: (e1, a2), (f1, b2), (g1, c2), (h1, d2)
@@ -1896,7 +1896,7 @@ namespace origami_sorter {
 	template <typename Reg, typename Item>
 	FORCEINLINE void mcmerge128x128(Reg& a0, Reg& a1, Reg& a2, Reg& a3, Reg& a4, Reg& a5, Reg& a6, Reg& a7, Reg& a8, Reg& a9, Reg& a10, Reg& a11, Reg& a12, Reg& a13, Reg& a14, Reg& a15) {
 		ReportError("mcmerge128x128: not implemented");
-
+		
 		if constexpr (sizeof(Reg) * 16 < sizeof(Item) * 256)
 			ReportError("mcmerge128x128: invalid register and item type");
 	}
@@ -2032,7 +2032,7 @@ namespace origami_sorter {
 			origami_utils::reverse<Reg, Item>(a9); origami_utils::reverse<Reg, Item>(a11);
 			origami_utils::reverse<Reg, Item>(a13); origami_utils::reverse<Reg, Item>(a15);
 		}
-
+		
 		// run swaps
 		origami_utils::swap<Reg, Item>(a0, a1);
 		origami_utils::swap<Reg, Item>(a2, a3);
@@ -2045,11 +2045,11 @@ namespace origami_sorter {
 
 		//
 		mrmerge_sort_reg<Reg, Item>(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15);
-
+		
 	}
 
 	template <typename Reg, typename Item>
-	FORCEINLINE void mrmerge2R(Reg& a0, Reg& a1, Reg& a2, Reg& a3, Reg& a4, Reg& a5, Reg& a6, Reg& a7, Reg& a8, Reg& a9, Reg& a10, Reg& a11, Reg& a12, Reg& a13, Reg& a14, Reg& a15,
+	FORCEINLINE void mrmerge2R(Reg& a0, Reg& a1, Reg& a2, Reg& a3, Reg& a4, Reg& a5, Reg& a6, Reg& a7, Reg& a8, Reg& a9, Reg& a10, Reg& a11, Reg& a12, Reg& a13, Reg& a14, Reg& a15, 
 		Reg& a16, Reg& a17, Reg& a18, Reg& a19, Reg& a20, Reg& a21, Reg& a22, Reg& a23, Reg& a24, Reg& a25, Reg& a26, Reg& a27, Reg& a28, Reg& a29, Reg& a30, Reg& a31) {
 		// reverse 2nd half
 		if constexpr (sizeof(Reg) / sizeof(Item) > 1) {
@@ -2089,11 +2089,11 @@ namespace origami_sorter {
 		}
 
 		// run swaps 
-		origami_utils::swap<Reg, Item>(a0, a2);  origami_utils::swap<Reg, Item>(a1, a3);  origami_utils::swap<Reg, Item>(a1, a2);
-		origami_utils::swap<Reg, Item>(a4, a6);  origami_utils::swap<Reg, Item>(a5, a7);  origami_utils::swap<Reg, Item>(a5, a6);
-		origami_utils::swap<Reg, Item>(a8, a10);  origami_utils::swap<Reg, Item>(a9, a11);  origami_utils::swap<Reg, Item>(a9, a10);
-		origami_utils::swap<Reg, Item>(a12, a14);  origami_utils::swap<Reg, Item>(a13, a15);  origami_utils::swap<Reg, Item>(a13, a14);
-
+		origami_utils::swap<Reg, Item>(a0, a2);  origami_utils::swap<Reg, Item>(a1, a3);  origami_utils::swap<Reg, Item>(a1, a2); 
+		origami_utils::swap<Reg, Item>(a4, a6);  origami_utils::swap<Reg, Item>(a5, a7);  origami_utils::swap<Reg, Item>(a5, a6); 
+		origami_utils::swap<Reg, Item>(a8, a10);  origami_utils::swap<Reg, Item>(a9, a11);  origami_utils::swap<Reg, Item>(a9, a10); 
+		origami_utils::swap<Reg, Item>(a12, a14);  origami_utils::swap<Reg, Item>(a13, a15);  origami_utils::swap<Reg, Item>(a13, a14); 
+		
 		// sort registers
 		mrmerge_sort_reg<Reg, Item>(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15);
 	}
@@ -2151,7 +2151,7 @@ namespace origami_sorter {
 		// sort registers
 		mrmerge_sort_reg<Reg, Item>(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15);
 	}
-
+	
 	template <typename Reg, typename Item>
 	FORCEINLINE void mrmerge8R(Reg& a0, Reg& a1, Reg& a2, Reg& a3, Reg& a4, Reg& a5, Reg& a6, Reg& a7, Reg& a8, Reg& a9, Reg& a10, Reg& a11, Reg& a12, Reg& a13, Reg& a14, Reg& a15,
 		Reg& a16, Reg& a17, Reg& a18, Reg& a19, Reg& a20, Reg& a21, Reg& a22, Reg& a23, Reg& a24, Reg& a25, Reg& a26, Reg& a27, Reg& a28, Reg& a29, Reg& a30, Reg& a31) {
@@ -2200,7 +2200,7 @@ namespace origami_sorter {
 
 		// run swaps
 		origami_utils::swap<Reg, Item>(a0, a8);  origami_utils::swap<Reg, Item>(a1, a9);  origami_utils::swap<Reg, Item>(a2, a10); origami_utils::swap<Reg, Item>(a3, a11);
-		origami_utils::swap<Reg, Item>(a4, a12);  origami_utils::swap<Reg, Item>(a5, a13); origami_utils::swap<Reg, Item>(a6, a14);  origami_utils::swap<Reg, Item>(a7, a15);
+		origami_utils::swap<Reg, Item>(a4, a12);  origami_utils::swap<Reg, Item>(a5, a13); origami_utils::swap<Reg, Item>(a6, a14);  origami_utils::swap<Reg, Item>(a7, a15); 
 		origami_utils::swap<Reg, Item>(a4, a8);  origami_utils::swap<Reg, Item>(a5, a9);  origami_utils::swap<Reg, Item>(a6, a10); origami_utils::swap<Reg, Item>(a7, a11);
 		origami_utils::swap<Reg, Item>(a2, a4);  origami_utils::swap<Reg, Item>(a3, a5); origami_utils::swap<Reg, Item>(a6, a8);  origami_utils::swap<Reg, Item>(a7, a9); origami_utils::swap<Reg, Item>(a10, a12);  origami_utils::swap<Reg, Item>(a11, a13);
 		origami_utils::swap<Reg, Item>(a1, a2);  origami_utils::swap<Reg, Item>(a3, a4); origami_utils::swap<Reg, Item>(a5, a6);  origami_utils::swap<Reg, Item>(a7, a8); origami_utils::swap<Reg, Item>(a9, a10);  origami_utils::swap<Reg, Item>(a11, a12); origami_utils::swap<Reg, Item>(a13, a14);
@@ -2270,7 +2270,7 @@ namespace origami_sorter {
 	template <typename Reg, typename Item>
 	FORCEINLINE void mrmerge64R(Reg& a0, Reg& a1, Reg& a2, Reg& a3, Reg& a4, Reg& a5, Reg& a6, Reg& a7, Reg& a8, Reg& a9, Reg& a10, Reg& a11, Reg& a12, Reg& a13, Reg& a14, Reg& a15,
 		Reg& a16, Reg& a17, Reg& a18, Reg& a19, Reg& a20, Reg& a21, Reg& a22, Reg& a23, Reg& a24, Reg& a25, Reg& a26, Reg& a27, Reg& a28, Reg& a29, Reg& a30, Reg& a31,
-		Reg& a32, Reg& a33, Reg& a34, Reg& a35, Reg& a36, Reg& a37, Reg& a38, Reg& a39, Reg& a40, Reg& a41, Reg& a42, Reg& a43, Reg& a44, Reg& a45, Reg& a46, Reg& a47,
+		Reg& a32, Reg& a33, Reg& a34, Reg& a35, Reg& a36, Reg& a37, Reg& a38, Reg& a39, Reg& a40, Reg& a41, Reg& a42, Reg& a43, Reg& a44, Reg& a45, Reg& a46, Reg& a47, 
 		Reg& a48, Reg& a49, Reg& a50, Reg& a51, Reg& a52, Reg& a53, Reg& a54, Reg& a55, Reg& a56, Reg& a57, Reg& a58, Reg& a59, Reg& a60, Reg& a61, Reg& a62, Reg& a63) {
 		// reverse 2nd half
 		if constexpr (sizeof(Reg) / sizeof(Item) > 1) {
@@ -2292,7 +2292,7 @@ namespace origami_sorter {
 		}
 		// run swaps
 		origami_utils::swap<Reg, Item>(a0, a64); origami_utils::swap<Reg, Item>(a32, a96); origami_utils::swap<Reg, Item>(a32, a64); origami_utils::swap<Reg, Item>(a16, a80); origami_utils::swap<Reg, Item>(a48, a112); origami_utils::swap<Reg, Item>(a48, a80); origami_utils::swap<Reg, Item>(a16, a32); origami_utils::swap<Reg, Item>(a48, a64); origami_utils::swap<Reg, Item>(a80, a96); origami_utils::swap<Reg, Item>(a8, a72); origami_utils::swap<Reg, Item>(a40, a104); origami_utils::swap<Reg, Item>(a40, a72); origami_utils::swap<Reg, Item>(a24, a88); origami_utils::swap<Reg, Item>(a56, a120); origami_utils::swap<Reg, Item>(a56, a88); origami_utils::swap<Reg, Item>(a24, a40); origami_utils::swap<Reg, Item>(a56, a72); origami_utils::swap<Reg, Item>(a88, a104); origami_utils::swap<Reg, Item>(a8, a16); origami_utils::swap<Reg, Item>(a24, a32); origami_utils::swap<Reg, Item>(a40, a48); origami_utils::swap<Reg, Item>(a56, a64); origami_utils::swap<Reg, Item>(a72, a80); origami_utils::swap<Reg, Item>(a88, a96); origami_utils::swap<Reg, Item>(a104, a112); origami_utils::swap<Reg, Item>(a4, a68); origami_utils::swap<Reg, Item>(a36, a100); origami_utils::swap<Reg, Item>(a36, a68); origami_utils::swap<Reg, Item>(a20, a84); origami_utils::swap<Reg, Item>(a52, a116); origami_utils::swap<Reg, Item>(a52, a84); origami_utils::swap<Reg, Item>(a20, a36); origami_utils::swap<Reg, Item>(a52, a68); origami_utils::swap<Reg, Item>(a84, a100); origami_utils::swap<Reg, Item>(a12, a76); origami_utils::swap<Reg, Item>(a44, a108); origami_utils::swap<Reg, Item>(a44, a76); origami_utils::swap<Reg, Item>(a28, a92); origami_utils::swap<Reg, Item>(a60, a124); origami_utils::swap<Reg, Item>(a60, a92); origami_utils::swap<Reg, Item>(a28, a44); origami_utils::swap<Reg, Item>(a60, a76); origami_utils::swap<Reg, Item>(a92, a108); origami_utils::swap<Reg, Item>(a12, a20); origami_utils::swap<Reg, Item>(a28, a36); origami_utils::swap<Reg, Item>(a44, a52); origami_utils::swap<Reg, Item>(a60, a68); origami_utils::swap<Reg, Item>(a76, a84); origami_utils::swap<Reg, Item>(a92, a100); origami_utils::swap<Reg, Item>(a108, a116); origami_utils::swap<Reg, Item>(a4, a8); origami_utils::swap<Reg, Item>(a12, a16); origami_utils::swap<Reg, Item>(a20, a24); origami_utils::swap<Reg, Item>(a28, a32); origami_utils::swap<Reg, Item>(a36, a40); origami_utils::swap<Reg, Item>(a44, a48); origami_utils::swap<Reg, Item>(a52, a56); origami_utils::swap<Reg, Item>(a60, a64); origami_utils::swap<Reg, Item>(a68, a72); origami_utils::swap<Reg, Item>(a76, a80); origami_utils::swap<Reg, Item>(a84, a88); origami_utils::swap<Reg, Item>(a92, a96); origami_utils::swap<Reg, Item>(a100, a104); origami_utils::swap<Reg, Item>(a108, a112); origami_utils::swap<Reg, Item>(a116, a120); origami_utils::swap<Reg, Item>(a2, a66); origami_utils::swap<Reg, Item>(a34, a98); origami_utils::swap<Reg, Item>(a34, a66); origami_utils::swap<Reg, Item>(a18, a82); origami_utils::swap<Reg, Item>(a50, a114); origami_utils::swap<Reg, Item>(a50, a82); origami_utils::swap<Reg, Item>(a18, a34); origami_utils::swap<Reg, Item>(a50, a66); origami_utils::swap<Reg, Item>(a82, a98); origami_utils::swap<Reg, Item>(a10, a74); origami_utils::swap<Reg, Item>(a42, a106); origami_utils::swap<Reg, Item>(a42, a74); origami_utils::swap<Reg, Item>(a26, a90); origami_utils::swap<Reg, Item>(a58, a122); origami_utils::swap<Reg, Item>(a58, a90); origami_utils::swap<Reg, Item>(a26, a42); origami_utils::swap<Reg, Item>(a58, a74); origami_utils::swap<Reg, Item>(a90, a106); origami_utils::swap<Reg, Item>(a10, a18); origami_utils::swap<Reg, Item>(a26, a34); origami_utils::swap<Reg, Item>(a42, a50); origami_utils::swap<Reg, Item>(a58, a66); origami_utils::swap<Reg, Item>(a74, a82); origami_utils::swap<Reg, Item>(a90, a98); origami_utils::swap<Reg, Item>(a106, a114); origami_utils::swap<Reg, Item>(a6, a70); origami_utils::swap<Reg, Item>(a38, a102); origami_utils::swap<Reg, Item>(a38, a70); origami_utils::swap<Reg, Item>(a22, a86); origami_utils::swap<Reg, Item>(a54, a118); origami_utils::swap<Reg, Item>(a54, a86); origami_utils::swap<Reg, Item>(a22, a38); origami_utils::swap<Reg, Item>(a54, a70); origami_utils::swap<Reg, Item>(a86, a102); origami_utils::swap<Reg, Item>(a14, a78); origami_utils::swap<Reg, Item>(a46, a110); origami_utils::swap<Reg, Item>(a46, a78); origami_utils::swap<Reg, Item>(a30, a94); origami_utils::swap<Reg, Item>(a62, a126); origami_utils::swap<Reg, Item>(a62, a94); origami_utils::swap<Reg, Item>(a30, a46); origami_utils::swap<Reg, Item>(a62, a78); origami_utils::swap<Reg, Item>(a94, a110); origami_utils::swap<Reg, Item>(a14, a22); origami_utils::swap<Reg, Item>(a30, a38); origami_utils::swap<Reg, Item>(a46, a54); origami_utils::swap<Reg, Item>(a62, a70); origami_utils::swap<Reg, Item>(a78, a86); origami_utils::swap<Reg, Item>(a94, a102); origami_utils::swap<Reg, Item>(a110, a118); origami_utils::swap<Reg, Item>(a6, a10); origami_utils::swap<Reg, Item>(a14, a18); origami_utils::swap<Reg, Item>(a22, a26); origami_utils::swap<Reg, Item>(a30, a34); origami_utils::swap<Reg, Item>(a38, a42); origami_utils::swap<Reg, Item>(a46, a50); origami_utils::swap<Reg, Item>(a54, a58); origami_utils::swap<Reg, Item>(a62, a66); origami_utils::swap<Reg, Item>(a70, a74); origami_utils::swap<Reg, Item>(a78, a82); origami_utils::swap<Reg, Item>(a86, a90); origami_utils::swap<Reg, Item>(a94, a98); origami_utils::swap<Reg, Item>(a102, a106); origami_utils::swap<Reg, Item>(a110, a114); origami_utils::swap<Reg, Item>(a118, a122); origami_utils::swap<Reg, Item>(a2, a4); origami_utils::swap<Reg, Item>(a6, a8); origami_utils::swap<Reg, Item>(a10, a12); origami_utils::swap<Reg, Item>(a14, a16); origami_utils::swap<Reg, Item>(a18, a20); origami_utils::swap<Reg, Item>(a22, a24); origami_utils::swap<Reg, Item>(a26, a28); origami_utils::swap<Reg, Item>(a30, a32); origami_utils::swap<Reg, Item>(a34, a36); origami_utils::swap<Reg, Item>(a38, a40); origami_utils::swap<Reg, Item>(a42, a44); origami_utils::swap<Reg, Item>(a46, a48); origami_utils::swap<Reg, Item>(a50, a52); origami_utils::swap<Reg, Item>(a54, a56); origami_utils::swap<Reg, Item>(a58, a60); origami_utils::swap<Reg, Item>(a62, a64); origami_utils::swap<Reg, Item>(a66, a68); origami_utils::swap<Reg, Item>(a70, a72); origami_utils::swap<Reg, Item>(a74, a76); origami_utils::swap<Reg, Item>(a78, a80); origami_utils::swap<Reg, Item>(a82, a84); origami_utils::swap<Reg, Item>(a86, a88); origami_utils::swap<Reg, Item>(a90, a92); origami_utils::swap<Reg, Item>(a94, a96); origami_utils::swap<Reg, Item>(a98, a100); origami_utils::swap<Reg, Item>(a102, a104); origami_utils::swap<Reg, Item>(a106, a108); origami_utils::swap<Reg, Item>(a110, a112); origami_utils::swap<Reg, Item>(a114, a116); origami_utils::swap<Reg, Item>(a118, a120); origami_utils::swap<Reg, Item>(a122, a124); origami_utils::swap<Reg, Item>(a1, a65); origami_utils::swap<Reg, Item>(a33, a97); origami_utils::swap<Reg, Item>(a33, a65); origami_utils::swap<Reg, Item>(a17, a81); origami_utils::swap<Reg, Item>(a49, a113); origami_utils::swap<Reg, Item>(a49, a81); origami_utils::swap<Reg, Item>(a17, a33); origami_utils::swap<Reg, Item>(a49, a65); origami_utils::swap<Reg, Item>(a81, a97); origami_utils::swap<Reg, Item>(a9, a73); origami_utils::swap<Reg, Item>(a41, a105); origami_utils::swap<Reg, Item>(a41, a73); origami_utils::swap<Reg, Item>(a25, a89); origami_utils::swap<Reg, Item>(a57, a121); origami_utils::swap<Reg, Item>(a57, a89); origami_utils::swap<Reg, Item>(a25, a41); origami_utils::swap<Reg, Item>(a57, a73); origami_utils::swap<Reg, Item>(a89, a105); origami_utils::swap<Reg, Item>(a9, a17); origami_utils::swap<Reg, Item>(a25, a33); origami_utils::swap<Reg, Item>(a41, a49); origami_utils::swap<Reg, Item>(a57, a65); origami_utils::swap<Reg, Item>(a73, a81); origami_utils::swap<Reg, Item>(a89, a97); origami_utils::swap<Reg, Item>(a105, a113); origami_utils::swap<Reg, Item>(a5, a69); origami_utils::swap<Reg, Item>(a37, a101); origami_utils::swap<Reg, Item>(a37, a69); origami_utils::swap<Reg, Item>(a21, a85); origami_utils::swap<Reg, Item>(a53, a117); origami_utils::swap<Reg, Item>(a53, a85); origami_utils::swap<Reg, Item>(a21, a37); origami_utils::swap<Reg, Item>(a53, a69); origami_utils::swap<Reg, Item>(a85, a101); origami_utils::swap<Reg, Item>(a13, a77); origami_utils::swap<Reg, Item>(a45, a109); origami_utils::swap<Reg, Item>(a45, a77); origami_utils::swap<Reg, Item>(a29, a93); origami_utils::swap<Reg, Item>(a61, a125); origami_utils::swap<Reg, Item>(a61, a93); origami_utils::swap<Reg, Item>(a29, a45); origami_utils::swap<Reg, Item>(a61, a77); origami_utils::swap<Reg, Item>(a93, a109); origami_utils::swap<Reg, Item>(a13, a21); origami_utils::swap<Reg, Item>(a29, a37); origami_utils::swap<Reg, Item>(a45, a53); origami_utils::swap<Reg, Item>(a61, a69); origami_utils::swap<Reg, Item>(a77, a85); origami_utils::swap<Reg, Item>(a93, a101); origami_utils::swap<Reg, Item>(a109, a117); origami_utils::swap<Reg, Item>(a5, a9); origami_utils::swap<Reg, Item>(a13, a17); origami_utils::swap<Reg, Item>(a21, a25); origami_utils::swap<Reg, Item>(a29, a33); origami_utils::swap<Reg, Item>(a37, a41); origami_utils::swap<Reg, Item>(a45, a49); origami_utils::swap<Reg, Item>(a53, a57); origami_utils::swap<Reg, Item>(a61, a65); origami_utils::swap<Reg, Item>(a69, a73); origami_utils::swap<Reg, Item>(a77, a81); origami_utils::swap<Reg, Item>(a85, a89); origami_utils::swap<Reg, Item>(a93, a97); origami_utils::swap<Reg, Item>(a101, a105); origami_utils::swap<Reg, Item>(a109, a113); origami_utils::swap<Reg, Item>(a117, a121); origami_utils::swap<Reg, Item>(a3, a67); origami_utils::swap<Reg, Item>(a35, a99); origami_utils::swap<Reg, Item>(a35, a67); origami_utils::swap<Reg, Item>(a19, a83); origami_utils::swap<Reg, Item>(a51, a115); origami_utils::swap<Reg, Item>(a51, a83); origami_utils::swap<Reg, Item>(a19, a35); origami_utils::swap<Reg, Item>(a51, a67); origami_utils::swap<Reg, Item>(a83, a99); origami_utils::swap<Reg, Item>(a11, a75); origami_utils::swap<Reg, Item>(a43, a107); origami_utils::swap<Reg, Item>(a43, a75); origami_utils::swap<Reg, Item>(a27, a91); origami_utils::swap<Reg, Item>(a59, a123); origami_utils::swap<Reg, Item>(a59, a91); origami_utils::swap<Reg, Item>(a27, a43); origami_utils::swap<Reg, Item>(a59, a75); origami_utils::swap<Reg, Item>(a91, a107); origami_utils::swap<Reg, Item>(a11, a19); origami_utils::swap<Reg, Item>(a27, a35); origami_utils::swap<Reg, Item>(a43, a51); origami_utils::swap<Reg, Item>(a59, a67); origami_utils::swap<Reg, Item>(a75, a83); origami_utils::swap<Reg, Item>(a91, a99); origami_utils::swap<Reg, Item>(a107, a115); origami_utils::swap<Reg, Item>(a7, a71); origami_utils::swap<Reg, Item>(a39, a103); origami_utils::swap<Reg, Item>(a39, a71); origami_utils::swap<Reg, Item>(a23, a87); origami_utils::swap<Reg, Item>(a55, a119); origami_utils::swap<Reg, Item>(a55, a87); origami_utils::swap<Reg, Item>(a23, a39); origami_utils::swap<Reg, Item>(a55, a71); origami_utils::swap<Reg, Item>(a87, a103); origami_utils::swap<Reg, Item>(a15, a79); origami_utils::swap<Reg, Item>(a47, a111); origami_utils::swap<Reg, Item>(a47, a79); origami_utils::swap<Reg, Item>(a31, a95); origami_utils::swap<Reg, Item>(a63, a127); origami_utils::swap<Reg, Item>(a63, a95); origami_utils::swap<Reg, Item>(a31, a47); origami_utils::swap<Reg, Item>(a63, a79); origami_utils::swap<Reg, Item>(a95, a111); origami_utils::swap<Reg, Item>(a15, a23); origami_utils::swap<Reg, Item>(a31, a39); origami_utils::swap<Reg, Item>(a47, a55); origami_utils::swap<Reg, Item>(a63, a71); origami_utils::swap<Reg, Item>(a79, a87); origami_utils::swap<Reg, Item>(a95, a103); origami_utils::swap<Reg, Item>(a111, a119); origami_utils::swap<Reg, Item>(a7, a11); origami_utils::swap<Reg, Item>(a15, a19); origami_utils::swap<Reg, Item>(a23, a27); origami_utils::swap<Reg, Item>(a31, a35); origami_utils::swap<Reg, Item>(a39, a43); origami_utils::swap<Reg, Item>(a47, a51); origami_utils::swap<Reg, Item>(a55, a59); origami_utils::swap<Reg, Item>(a63, a67); origami_utils::swap<Reg, Item>(a71, a75); origami_utils::swap<Reg, Item>(a79, a83); origami_utils::swap<Reg, Item>(a87, a91); origami_utils::swap<Reg, Item>(a95, a99); origami_utils::swap<Reg, Item>(a103, a107); origami_utils::swap<Reg, Item>(a111, a115); origami_utils::swap<Reg, Item>(a119, a123); origami_utils::swap<Reg, Item>(a3, a5); origami_utils::swap<Reg, Item>(a7, a9); origami_utils::swap<Reg, Item>(a11, a13); origami_utils::swap<Reg, Item>(a15, a17); origami_utils::swap<Reg, Item>(a19, a21); origami_utils::swap<Reg, Item>(a23, a25); origami_utils::swap<Reg, Item>(a27, a29); origami_utils::swap<Reg, Item>(a31, a33); origami_utils::swap<Reg, Item>(a35, a37); origami_utils::swap<Reg, Item>(a39, a41); origami_utils::swap<Reg, Item>(a43, a45); origami_utils::swap<Reg, Item>(a47, a49); origami_utils::swap<Reg, Item>(a51, a53); origami_utils::swap<Reg, Item>(a55, a57); origami_utils::swap<Reg, Item>(a59, a61); origami_utils::swap<Reg, Item>(a63, a65); origami_utils::swap<Reg, Item>(a67, a69); origami_utils::swap<Reg, Item>(a71, a73); origami_utils::swap<Reg, Item>(a75, a77); origami_utils::swap<Reg, Item>(a79, a81); origami_utils::swap<Reg, Item>(a83, a85); origami_utils::swap<Reg, Item>(a87, a89); origami_utils::swap<Reg, Item>(a91, a93); origami_utils::swap<Reg, Item>(a95, a97); origami_utils::swap<Reg, Item>(a99, a101); origami_utils::swap<Reg, Item>(a103, a105); origami_utils::swap<Reg, Item>(a107, a109); origami_utils::swap<Reg, Item>(a111, a113); origami_utils::swap<Reg, Item>(a115, a117); origami_utils::swap<Reg, Item>(a119, a121); origami_utils::swap<Reg, Item>(a123, a125); origami_utils::swap<Reg, Item>(a1, a2); origami_utils::swap<Reg, Item>(a3, a4); origami_utils::swap<Reg, Item>(a5, a6); origami_utils::swap<Reg, Item>(a7, a8); origami_utils::swap<Reg, Item>(a9, a10); origami_utils::swap<Reg, Item>(a11, a12); origami_utils::swap<Reg, Item>(a13, a14); origami_utils::swap<Reg, Item>(a15, a16); origami_utils::swap<Reg, Item>(a17, a18); origami_utils::swap<Reg, Item>(a19, a20); origami_utils::swap<Reg, Item>(a21, a22); origami_utils::swap<Reg, Item>(a23, a24); origami_utils::swap<Reg, Item>(a25, a26); origami_utils::swap<Reg, Item>(a27, a28); origami_utils::swap<Reg, Item>(a29, a30); origami_utils::swap<Reg, Item>(a31, a32); origami_utils::swap<Reg, Item>(a33, a34); origami_utils::swap<Reg, Item>(a35, a36); origami_utils::swap<Reg, Item>(a37, a38); origami_utils::swap<Reg, Item>(a39, a40); origami_utils::swap<Reg, Item>(a41, a42); origami_utils::swap<Reg, Item>(a43, a44); origami_utils::swap<Reg, Item>(a45, a46); origami_utils::swap<Reg, Item>(a47, a48); origami_utils::swap<Reg, Item>(a49, a50); origami_utils::swap<Reg, Item>(a51, a52); origami_utils::swap<Reg, Item>(a53, a54); origami_utils::swap<Reg, Item>(a55, a56); origami_utils::swap<Reg, Item>(a57, a58); origami_utils::swap<Reg, Item>(a59, a60); origami_utils::swap<Reg, Item>(a61, a62); origami_utils::swap<Reg, Item>(a63, a64); origami_utils::swap<Reg, Item>(a65, a66); origami_utils::swap<Reg, Item>(a67, a68); origami_utils::swap<Reg, Item>(a69, a70); origami_utils::swap<Reg, Item>(a71, a72); origami_utils::swap<Reg, Item>(a73, a74); origami_utils::swap<Reg, Item>(a75, a76); origami_utils::swap<Reg, Item>(a77, a78); origami_utils::swap<Reg, Item>(a79, a80); origami_utils::swap<Reg, Item>(a81, a82); origami_utils::swap<Reg, Item>(a83, a84); origami_utils::swap<Reg, Item>(a85, a86); origami_utils::swap<Reg, Item>(a87, a88); origami_utils::swap<Reg, Item>(a89, a90); origami_utils::swap<Reg, Item>(a91, a92); origami_utils::swap<Reg, Item>(a93, a94); origami_utils::swap<Reg, Item>(a95, a96); origami_utils::swap<Reg, Item>(a97, a98); origami_utils::swap<Reg, Item>(a99, a100); origami_utils::swap<Reg, Item>(a101, a102); origami_utils::swap<Reg, Item>(a103, a104); origami_utils::swap<Reg, Item>(a105, a106); origami_utils::swap<Reg, Item>(a107, a108); origami_utils::swap<Reg, Item>(a109, a110); origami_utils::swap<Reg, Item>(a111, a112); origami_utils::swap<Reg, Item>(a113, a114); origami_utils::swap<Reg, Item>(a115, a116); origami_utils::swap<Reg, Item>(a117, a118); origami_utils::swap<Reg, Item>(a119, a120); origami_utils::swap<Reg, Item>(a121, a122); origami_utils::swap<Reg, Item>(a123, a124); origami_utils::swap<Reg, Item>(a125, a126);
-
+		
 		//
 		mrmerge_sort_reg<Reg, Item>(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31);
 		mrmerge_sort_reg<Reg, Item>(a32, a33, a34, a35, a36, a37, a38, a39, a40, a41, a42, a43, a44, a45, a46, a47, a48, a49, a50, a51, a52, a53, a54, a55, a56, a57, a58, a59, a60, a61, a62, a63);
@@ -2305,9 +2305,9 @@ namespace origami_sorter {
 		if constexpr (sizeof(Reg) / sizeof(Item) > 1) {
 			origami_utils::reverse<Reg, Item>(a128); origami_utils::reverse<Reg, Item>(a129); origami_utils::reverse<Reg, Item>(a130); origami_utils::reverse<Reg, Item>(a131); origami_utils::reverse<Reg, Item>(a132); origami_utils::reverse<Reg, Item>(a133); origami_utils::reverse<Reg, Item>(a134); origami_utils::reverse<Reg, Item>(a135); origami_utils::reverse<Reg, Item>(a136); origami_utils::reverse<Reg, Item>(a137); origami_utils::reverse<Reg, Item>(a138); origami_utils::reverse<Reg, Item>(a139); origami_utils::reverse<Reg, Item>(a140); origami_utils::reverse<Reg, Item>(a141); origami_utils::reverse<Reg, Item>(a142); origami_utils::reverse<Reg, Item>(a143); origami_utils::reverse<Reg, Item>(a144); origami_utils::reverse<Reg, Item>(a145); origami_utils::reverse<Reg, Item>(a146); origami_utils::reverse<Reg, Item>(a147); origami_utils::reverse<Reg, Item>(a148); origami_utils::reverse<Reg, Item>(a149); origami_utils::reverse<Reg, Item>(a150); origami_utils::reverse<Reg, Item>(a151); origami_utils::reverse<Reg, Item>(a152); origami_utils::reverse<Reg, Item>(a153); origami_utils::reverse<Reg, Item>(a154); origami_utils::reverse<Reg, Item>(a155); origami_utils::reverse<Reg, Item>(a156); origami_utils::reverse<Reg, Item>(a157); origami_utils::reverse<Reg, Item>(a158); origami_utils::reverse<Reg, Item>(a159); origami_utils::reverse<Reg, Item>(a160); origami_utils::reverse<Reg, Item>(a161); origami_utils::reverse<Reg, Item>(a162); origami_utils::reverse<Reg, Item>(a163); origami_utils::reverse<Reg, Item>(a164); origami_utils::reverse<Reg, Item>(a165); origami_utils::reverse<Reg, Item>(a166); origami_utils::reverse<Reg, Item>(a167); origami_utils::reverse<Reg, Item>(a168); origami_utils::reverse<Reg, Item>(a169); origami_utils::reverse<Reg, Item>(a170); origami_utils::reverse<Reg, Item>(a171); origami_utils::reverse<Reg, Item>(a172); origami_utils::reverse<Reg, Item>(a173); origami_utils::reverse<Reg, Item>(a174); origami_utils::reverse<Reg, Item>(a175); origami_utils::reverse<Reg, Item>(a176); origami_utils::reverse<Reg, Item>(a177); origami_utils::reverse<Reg, Item>(a178); origami_utils::reverse<Reg, Item>(a179); origami_utils::reverse<Reg, Item>(a180); origami_utils::reverse<Reg, Item>(a181); origami_utils::reverse<Reg, Item>(a182); origami_utils::reverse<Reg, Item>(a183); origami_utils::reverse<Reg, Item>(a184); origami_utils::reverse<Reg, Item>(a185); origami_utils::reverse<Reg, Item>(a186); origami_utils::reverse<Reg, Item>(a187); origami_utils::reverse<Reg, Item>(a188); origami_utils::reverse<Reg, Item>(a189); origami_utils::reverse<Reg, Item>(a190); origami_utils::reverse<Reg, Item>(a191); origami_utils::reverse<Reg, Item>(a192); origami_utils::reverse<Reg, Item>(a193); origami_utils::reverse<Reg, Item>(a194); origami_utils::reverse<Reg, Item>(a195); origami_utils::reverse<Reg, Item>(a196); origami_utils::reverse<Reg, Item>(a197); origami_utils::reverse<Reg, Item>(a198); origami_utils::reverse<Reg, Item>(a199); origami_utils::reverse<Reg, Item>(a200); origami_utils::reverse<Reg, Item>(a201); origami_utils::reverse<Reg, Item>(a202); origami_utils::reverse<Reg, Item>(a203); origami_utils::reverse<Reg, Item>(a204); origami_utils::reverse<Reg, Item>(a205); origami_utils::reverse<Reg, Item>(a206); origami_utils::reverse<Reg, Item>(a207); origami_utils::reverse<Reg, Item>(a208); origami_utils::reverse<Reg, Item>(a209); origami_utils::reverse<Reg, Item>(a210); origami_utils::reverse<Reg, Item>(a211); origami_utils::reverse<Reg, Item>(a212); origami_utils::reverse<Reg, Item>(a213); origami_utils::reverse<Reg, Item>(a214); origami_utils::reverse<Reg, Item>(a215); origami_utils::reverse<Reg, Item>(a216); origami_utils::reverse<Reg, Item>(a217); origami_utils::reverse<Reg, Item>(a218); origami_utils::reverse<Reg, Item>(a219); origami_utils::reverse<Reg, Item>(a220); origami_utils::reverse<Reg, Item>(a221); origami_utils::reverse<Reg, Item>(a222); origami_utils::reverse<Reg, Item>(a223); origami_utils::reverse<Reg, Item>(a224); origami_utils::reverse<Reg, Item>(a225); origami_utils::reverse<Reg, Item>(a226); origami_utils::reverse<Reg, Item>(a227); origami_utils::reverse<Reg, Item>(a228); origami_utils::reverse<Reg, Item>(a229); origami_utils::reverse<Reg, Item>(a230); origami_utils::reverse<Reg, Item>(a231); origami_utils::reverse<Reg, Item>(a232); origami_utils::reverse<Reg, Item>(a233); origami_utils::reverse<Reg, Item>(a234); origami_utils::reverse<Reg, Item>(a235); origami_utils::reverse<Reg, Item>(a236); origami_utils::reverse<Reg, Item>(a237); origami_utils::reverse<Reg, Item>(a238); origami_utils::reverse<Reg, Item>(a239); origami_utils::reverse<Reg, Item>(a240); origami_utils::reverse<Reg, Item>(a241); origami_utils::reverse<Reg, Item>(a242); origami_utils::reverse<Reg, Item>(a243); origami_utils::reverse<Reg, Item>(a244); origami_utils::reverse<Reg, Item>(a245); origami_utils::reverse<Reg, Item>(a246); origami_utils::reverse<Reg, Item>(a247); origami_utils::reverse<Reg, Item>(a248); origami_utils::reverse<Reg, Item>(a249); origami_utils::reverse<Reg, Item>(a250); origami_utils::reverse<Reg, Item>(a251); origami_utils::reverse<Reg, Item>(a252); origami_utils::reverse<Reg, Item>(a253); origami_utils::reverse<Reg, Item>(a254); origami_utils::reverse<Reg, Item>(a255);
 		}
-
+		
 		origami_utils::swap<Reg, Item>(a0, a128); origami_utils::swap<Reg, Item>(a64, a192); origami_utils::swap<Reg, Item>(a64, a128); origami_utils::swap<Reg, Item>(a32, a160); origami_utils::swap<Reg, Item>(a96, a224); origami_utils::swap<Reg, Item>(a96, a160); origami_utils::swap<Reg, Item>(a32, a64); origami_utils::swap<Reg, Item>(a96, a128); origami_utils::swap<Reg, Item>(a160, a192); origami_utils::swap<Reg, Item>(a16, a144); origami_utils::swap<Reg, Item>(a80, a208); origami_utils::swap<Reg, Item>(a80, a144); origami_utils::swap<Reg, Item>(a48, a176); origami_utils::swap<Reg, Item>(a112, a240); origami_utils::swap<Reg, Item>(a112, a176); origami_utils::swap<Reg, Item>(a48, a80); origami_utils::swap<Reg, Item>(a112, a144); origami_utils::swap<Reg, Item>(a176, a208); origami_utils::swap<Reg, Item>(a16, a32); origami_utils::swap<Reg, Item>(a48, a64); origami_utils::swap<Reg, Item>(a80, a96); origami_utils::swap<Reg, Item>(a112, a128); origami_utils::swap<Reg, Item>(a144, a160); origami_utils::swap<Reg, Item>(a176, a192); origami_utils::swap<Reg, Item>(a208, a224); origami_utils::swap<Reg, Item>(a8, a136); origami_utils::swap<Reg, Item>(a72, a200); origami_utils::swap<Reg, Item>(a72, a136); origami_utils::swap<Reg, Item>(a40, a168); origami_utils::swap<Reg, Item>(a104, a232); origami_utils::swap<Reg, Item>(a104, a168); origami_utils::swap<Reg, Item>(a40, a72); origami_utils::swap<Reg, Item>(a104, a136); origami_utils::swap<Reg, Item>(a168, a200); origami_utils::swap<Reg, Item>(a24, a152); origami_utils::swap<Reg, Item>(a88, a216); origami_utils::swap<Reg, Item>(a88, a152); origami_utils::swap<Reg, Item>(a56, a184); origami_utils::swap<Reg, Item>(a120, a248); origami_utils::swap<Reg, Item>(a120, a184); origami_utils::swap<Reg, Item>(a56, a88); origami_utils::swap<Reg, Item>(a120, a152); origami_utils::swap<Reg, Item>(a184, a216); origami_utils::swap<Reg, Item>(a24, a40); origami_utils::swap<Reg, Item>(a56, a72); origami_utils::swap<Reg, Item>(a88, a104); origami_utils::swap<Reg, Item>(a120, a136); origami_utils::swap<Reg, Item>(a152, a168); origami_utils::swap<Reg, Item>(a184, a200); origami_utils::swap<Reg, Item>(a216, a232); origami_utils::swap<Reg, Item>(a8, a16); origami_utils::swap<Reg, Item>(a24, a32); origami_utils::swap<Reg, Item>(a40, a48); origami_utils::swap<Reg, Item>(a56, a64); origami_utils::swap<Reg, Item>(a72, a80); origami_utils::swap<Reg, Item>(a88, a96); origami_utils::swap<Reg, Item>(a104, a112); origami_utils::swap<Reg, Item>(a120, a128); origami_utils::swap<Reg, Item>(a136, a144); origami_utils::swap<Reg, Item>(a152, a160); origami_utils::swap<Reg, Item>(a168, a176); origami_utils::swap<Reg, Item>(a184, a192); origami_utils::swap<Reg, Item>(a200, a208); origami_utils::swap<Reg, Item>(a216, a224); origami_utils::swap<Reg, Item>(a232, a240); origami_utils::swap<Reg, Item>(a4, a132); origami_utils::swap<Reg, Item>(a68, a196); origami_utils::swap<Reg, Item>(a68, a132); origami_utils::swap<Reg, Item>(a36, a164); origami_utils::swap<Reg, Item>(a100, a228); origami_utils::swap<Reg, Item>(a100, a164); origami_utils::swap<Reg, Item>(a36, a68); origami_utils::swap<Reg, Item>(a100, a132); origami_utils::swap<Reg, Item>(a164, a196); origami_utils::swap<Reg, Item>(a20, a148); origami_utils::swap<Reg, Item>(a84, a212); origami_utils::swap<Reg, Item>(a84, a148); origami_utils::swap<Reg, Item>(a52, a180); origami_utils::swap<Reg, Item>(a116, a244); origami_utils::swap<Reg, Item>(a116, a180); origami_utils::swap<Reg, Item>(a52, a84); origami_utils::swap<Reg, Item>(a116, a148); origami_utils::swap<Reg, Item>(a180, a212); origami_utils::swap<Reg, Item>(a20, a36); origami_utils::swap<Reg, Item>(a52, a68); origami_utils::swap<Reg, Item>(a84, a100); origami_utils::swap<Reg, Item>(a116, a132); origami_utils::swap<Reg, Item>(a148, a164); origami_utils::swap<Reg, Item>(a180, a196); origami_utils::swap<Reg, Item>(a212, a228); origami_utils::swap<Reg, Item>(a12, a140); origami_utils::swap<Reg, Item>(a76, a204); origami_utils::swap<Reg, Item>(a76, a140); origami_utils::swap<Reg, Item>(a44, a172); origami_utils::swap<Reg, Item>(a108, a236); origami_utils::swap<Reg, Item>(a108, a172); origami_utils::swap<Reg, Item>(a44, a76); origami_utils::swap<Reg, Item>(a108, a140); origami_utils::swap<Reg, Item>(a172, a204); origami_utils::swap<Reg, Item>(a28, a156); origami_utils::swap<Reg, Item>(a92, a220); origami_utils::swap<Reg, Item>(a92, a156); origami_utils::swap<Reg, Item>(a60, a188); origami_utils::swap<Reg, Item>(a124, a252); origami_utils::swap<Reg, Item>(a124, a188); origami_utils::swap<Reg, Item>(a60, a92); origami_utils::swap<Reg, Item>(a124, a156); origami_utils::swap<Reg, Item>(a188, a220); origami_utils::swap<Reg, Item>(a28, a44); origami_utils::swap<Reg, Item>(a60, a76); origami_utils::swap<Reg, Item>(a92, a108); origami_utils::swap<Reg, Item>(a124, a140); origami_utils::swap<Reg, Item>(a156, a172); origami_utils::swap<Reg, Item>(a188, a204); origami_utils::swap<Reg, Item>(a220, a236); origami_utils::swap<Reg, Item>(a12, a20); origami_utils::swap<Reg, Item>(a28, a36); origami_utils::swap<Reg, Item>(a44, a52); origami_utils::swap<Reg, Item>(a60, a68); origami_utils::swap<Reg, Item>(a76, a84); origami_utils::swap<Reg, Item>(a92, a100); origami_utils::swap<Reg, Item>(a108, a116); origami_utils::swap<Reg, Item>(a124, a132); origami_utils::swap<Reg, Item>(a140, a148); origami_utils::swap<Reg, Item>(a156, a164); origami_utils::swap<Reg, Item>(a172, a180); origami_utils::swap<Reg, Item>(a188, a196); origami_utils::swap<Reg, Item>(a204, a212); origami_utils::swap<Reg, Item>(a220, a228); origami_utils::swap<Reg, Item>(a236, a244); origami_utils::swap<Reg, Item>(a4, a8); origami_utils::swap<Reg, Item>(a12, a16); origami_utils::swap<Reg, Item>(a20, a24); origami_utils::swap<Reg, Item>(a28, a32); origami_utils::swap<Reg, Item>(a36, a40); origami_utils::swap<Reg, Item>(a44, a48); origami_utils::swap<Reg, Item>(a52, a56); origami_utils::swap<Reg, Item>(a60, a64); origami_utils::swap<Reg, Item>(a68, a72); origami_utils::swap<Reg, Item>(a76, a80); origami_utils::swap<Reg, Item>(a84, a88); origami_utils::swap<Reg, Item>(a92, a96); origami_utils::swap<Reg, Item>(a100, a104); origami_utils::swap<Reg, Item>(a108, a112); origami_utils::swap<Reg, Item>(a116, a120); origami_utils::swap<Reg, Item>(a124, a128); origami_utils::swap<Reg, Item>(a132, a136); origami_utils::swap<Reg, Item>(a140, a144); origami_utils::swap<Reg, Item>(a148, a152); origami_utils::swap<Reg, Item>(a156, a160); origami_utils::swap<Reg, Item>(a164, a168); origami_utils::swap<Reg, Item>(a172, a176); origami_utils::swap<Reg, Item>(a180, a184); origami_utils::swap<Reg, Item>(a188, a192); origami_utils::swap<Reg, Item>(a196, a200); origami_utils::swap<Reg, Item>(a204, a208); origami_utils::swap<Reg, Item>(a212, a216); origami_utils::swap<Reg, Item>(a220, a224); origami_utils::swap<Reg, Item>(a228, a232); origami_utils::swap<Reg, Item>(a236, a240); origami_utils::swap<Reg, Item>(a244, a248); origami_utils::swap<Reg, Item>(a2, a130); origami_utils::swap<Reg, Item>(a66, a194); origami_utils::swap<Reg, Item>(a66, a130); origami_utils::swap<Reg, Item>(a34, a162); origami_utils::swap<Reg, Item>(a98, a226); origami_utils::swap<Reg, Item>(a98, a162); origami_utils::swap<Reg, Item>(a34, a66); origami_utils::swap<Reg, Item>(a98, a130); origami_utils::swap<Reg, Item>(a162, a194); origami_utils::swap<Reg, Item>(a18, a146); origami_utils::swap<Reg, Item>(a82, a210); origami_utils::swap<Reg, Item>(a82, a146); origami_utils::swap<Reg, Item>(a50, a178); origami_utils::swap<Reg, Item>(a114, a242); origami_utils::swap<Reg, Item>(a114, a178); origami_utils::swap<Reg, Item>(a50, a82); origami_utils::swap<Reg, Item>(a114, a146); origami_utils::swap<Reg, Item>(a178, a210); origami_utils::swap<Reg, Item>(a18, a34); origami_utils::swap<Reg, Item>(a50, a66); origami_utils::swap<Reg, Item>(a82, a98); origami_utils::swap<Reg, Item>(a114, a130); origami_utils::swap<Reg, Item>(a146, a162); origami_utils::swap<Reg, Item>(a178, a194); origami_utils::swap<Reg, Item>(a210, a226); origami_utils::swap<Reg, Item>(a10, a138); origami_utils::swap<Reg, Item>(a74, a202); origami_utils::swap<Reg, Item>(a74, a138); origami_utils::swap<Reg, Item>(a42, a170); origami_utils::swap<Reg, Item>(a106, a234); origami_utils::swap<Reg, Item>(a106, a170); origami_utils::swap<Reg, Item>(a42, a74); origami_utils::swap<Reg, Item>(a106, a138); origami_utils::swap<Reg, Item>(a170, a202); origami_utils::swap<Reg, Item>(a26, a154); origami_utils::swap<Reg, Item>(a90, a218); origami_utils::swap<Reg, Item>(a90, a154); origami_utils::swap<Reg, Item>(a58, a186); origami_utils::swap<Reg, Item>(a122, a250); origami_utils::swap<Reg, Item>(a122, a186); origami_utils::swap<Reg, Item>(a58, a90); origami_utils::swap<Reg, Item>(a122, a154); origami_utils::swap<Reg, Item>(a186, a218); origami_utils::swap<Reg, Item>(a26, a42); origami_utils::swap<Reg, Item>(a58, a74); origami_utils::swap<Reg, Item>(a90, a106); origami_utils::swap<Reg, Item>(a122, a138); origami_utils::swap<Reg, Item>(a154, a170); origami_utils::swap<Reg, Item>(a186, a202); origami_utils::swap<Reg, Item>(a218, a234); origami_utils::swap<Reg, Item>(a10, a18); origami_utils::swap<Reg, Item>(a26, a34); origami_utils::swap<Reg, Item>(a42, a50); origami_utils::swap<Reg, Item>(a58, a66); origami_utils::swap<Reg, Item>(a74, a82); origami_utils::swap<Reg, Item>(a90, a98); origami_utils::swap<Reg, Item>(a106, a114); origami_utils::swap<Reg, Item>(a122, a130); origami_utils::swap<Reg, Item>(a138, a146); origami_utils::swap<Reg, Item>(a154, a162); origami_utils::swap<Reg, Item>(a170, a178); origami_utils::swap<Reg, Item>(a186, a194); origami_utils::swap<Reg, Item>(a202, a210); origami_utils::swap<Reg, Item>(a218, a226); origami_utils::swap<Reg, Item>(a234, a242); origami_utils::swap<Reg, Item>(a6, a134); origami_utils::swap<Reg, Item>(a70, a198); origami_utils::swap<Reg, Item>(a70, a134); origami_utils::swap<Reg, Item>(a38, a166); origami_utils::swap<Reg, Item>(a102, a230); origami_utils::swap<Reg, Item>(a102, a166); origami_utils::swap<Reg, Item>(a38, a70); origami_utils::swap<Reg, Item>(a102, a134); origami_utils::swap<Reg, Item>(a166, a198); origami_utils::swap<Reg, Item>(a22, a150); origami_utils::swap<Reg, Item>(a86, a214); origami_utils::swap<Reg, Item>(a86, a150); origami_utils::swap<Reg, Item>(a54, a182); origami_utils::swap<Reg, Item>(a118, a246); origami_utils::swap<Reg, Item>(a118, a182); origami_utils::swap<Reg, Item>(a54, a86); origami_utils::swap<Reg, Item>(a118, a150); origami_utils::swap<Reg, Item>(a182, a214); origami_utils::swap<Reg, Item>(a22, a38); origami_utils::swap<Reg, Item>(a54, a70); origami_utils::swap<Reg, Item>(a86, a102); origami_utils::swap<Reg, Item>(a118, a134); origami_utils::swap<Reg, Item>(a150, a166); origami_utils::swap<Reg, Item>(a182, a198); origami_utils::swap<Reg, Item>(a214, a230); origami_utils::swap<Reg, Item>(a14, a142); origami_utils::swap<Reg, Item>(a78, a206); origami_utils::swap<Reg, Item>(a78, a142); origami_utils::swap<Reg, Item>(a46, a174); origami_utils::swap<Reg, Item>(a110, a238); origami_utils::swap<Reg, Item>(a110, a174); origami_utils::swap<Reg, Item>(a46, a78); origami_utils::swap<Reg, Item>(a110, a142); origami_utils::swap<Reg, Item>(a174, a206); origami_utils::swap<Reg, Item>(a30, a158); origami_utils::swap<Reg, Item>(a94, a222); origami_utils::swap<Reg, Item>(a94, a158); origami_utils::swap<Reg, Item>(a62, a190); origami_utils::swap<Reg, Item>(a126, a254); origami_utils::swap<Reg, Item>(a126, a190); origami_utils::swap<Reg, Item>(a62, a94); origami_utils::swap<Reg, Item>(a126, a158); origami_utils::swap<Reg, Item>(a190, a222); origami_utils::swap<Reg, Item>(a30, a46); origami_utils::swap<Reg, Item>(a62, a78); origami_utils::swap<Reg, Item>(a94, a110); origami_utils::swap<Reg, Item>(a126, a142); origami_utils::swap<Reg, Item>(a158, a174); origami_utils::swap<Reg, Item>(a190, a206); origami_utils::swap<Reg, Item>(a222, a238); origami_utils::swap<Reg, Item>(a14, a22); origami_utils::swap<Reg, Item>(a30, a38); origami_utils::swap<Reg, Item>(a46, a54); origami_utils::swap<Reg, Item>(a62, a70); origami_utils::swap<Reg, Item>(a78, a86); origami_utils::swap<Reg, Item>(a94, a102); origami_utils::swap<Reg, Item>(a110, a118); origami_utils::swap<Reg, Item>(a126, a134); origami_utils::swap<Reg, Item>(a142, a150); origami_utils::swap<Reg, Item>(a158, a166); origami_utils::swap<Reg, Item>(a174, a182); origami_utils::swap<Reg, Item>(a190, a198); origami_utils::swap<Reg, Item>(a206, a214); origami_utils::swap<Reg, Item>(a222, a230); origami_utils::swap<Reg, Item>(a238, a246); origami_utils::swap<Reg, Item>(a6, a10); origami_utils::swap<Reg, Item>(a14, a18); origami_utils::swap<Reg, Item>(a22, a26); origami_utils::swap<Reg, Item>(a30, a34); origami_utils::swap<Reg, Item>(a38, a42); origami_utils::swap<Reg, Item>(a46, a50); origami_utils::swap<Reg, Item>(a54, a58); origami_utils::swap<Reg, Item>(a62, a66); origami_utils::swap<Reg, Item>(a70, a74); origami_utils::swap<Reg, Item>(a78, a82); origami_utils::swap<Reg, Item>(a86, a90); origami_utils::swap<Reg, Item>(a94, a98); origami_utils::swap<Reg, Item>(a102, a106); origami_utils::swap<Reg, Item>(a110, a114); origami_utils::swap<Reg, Item>(a118, a122); origami_utils::swap<Reg, Item>(a126, a130); origami_utils::swap<Reg, Item>(a134, a138); origami_utils::swap<Reg, Item>(a142, a146); origami_utils::swap<Reg, Item>(a150, a154); origami_utils::swap<Reg, Item>(a158, a162); origami_utils::swap<Reg, Item>(a166, a170); origami_utils::swap<Reg, Item>(a174, a178); origami_utils::swap<Reg, Item>(a182, a186); origami_utils::swap<Reg, Item>(a190, a194); origami_utils::swap<Reg, Item>(a198, a202); origami_utils::swap<Reg, Item>(a206, a210); origami_utils::swap<Reg, Item>(a214, a218); origami_utils::swap<Reg, Item>(a222, a226); origami_utils::swap<Reg, Item>(a230, a234); origami_utils::swap<Reg, Item>(a238, a242); origami_utils::swap<Reg, Item>(a246, a250); origami_utils::swap<Reg, Item>(a2, a4); origami_utils::swap<Reg, Item>(a6, a8); origami_utils::swap<Reg, Item>(a10, a12); origami_utils::swap<Reg, Item>(a14, a16); origami_utils::swap<Reg, Item>(a18, a20); origami_utils::swap<Reg, Item>(a22, a24); origami_utils::swap<Reg, Item>(a26, a28); origami_utils::swap<Reg, Item>(a30, a32); origami_utils::swap<Reg, Item>(a34, a36); origami_utils::swap<Reg, Item>(a38, a40); origami_utils::swap<Reg, Item>(a42, a44); origami_utils::swap<Reg, Item>(a46, a48); origami_utils::swap<Reg, Item>(a50, a52); origami_utils::swap<Reg, Item>(a54, a56); origami_utils::swap<Reg, Item>(a58, a60); origami_utils::swap<Reg, Item>(a62, a64); origami_utils::swap<Reg, Item>(a66, a68); origami_utils::swap<Reg, Item>(a70, a72); origami_utils::swap<Reg, Item>(a74, a76); origami_utils::swap<Reg, Item>(a78, a80); origami_utils::swap<Reg, Item>(a82, a84); origami_utils::swap<Reg, Item>(a86, a88); origami_utils::swap<Reg, Item>(a90, a92); origami_utils::swap<Reg, Item>(a94, a96); origami_utils::swap<Reg, Item>(a98, a100); origami_utils::swap<Reg, Item>(a102, a104); origami_utils::swap<Reg, Item>(a106, a108); origami_utils::swap<Reg, Item>(a110, a112); origami_utils::swap<Reg, Item>(a114, a116); origami_utils::swap<Reg, Item>(a118, a120); origami_utils::swap<Reg, Item>(a122, a124); origami_utils::swap<Reg, Item>(a126, a128); origami_utils::swap<Reg, Item>(a130, a132); origami_utils::swap<Reg, Item>(a134, a136); origami_utils::swap<Reg, Item>(a138, a140); origami_utils::swap<Reg, Item>(a142, a144); origami_utils::swap<Reg, Item>(a146, a148); origami_utils::swap<Reg, Item>(a150, a152); origami_utils::swap<Reg, Item>(a154, a156); origami_utils::swap<Reg, Item>(a158, a160); origami_utils::swap<Reg, Item>(a162, a164); origami_utils::swap<Reg, Item>(a166, a168); origami_utils::swap<Reg, Item>(a170, a172); origami_utils::swap<Reg, Item>(a174, a176); origami_utils::swap<Reg, Item>(a178, a180); origami_utils::swap<Reg, Item>(a182, a184); origami_utils::swap<Reg, Item>(a186, a188); origami_utils::swap<Reg, Item>(a190, a192); origami_utils::swap<Reg, Item>(a194, a196); origami_utils::swap<Reg, Item>(a198, a200); origami_utils::swap<Reg, Item>(a202, a204); origami_utils::swap<Reg, Item>(a206, a208); origami_utils::swap<Reg, Item>(a210, a212); origami_utils::swap<Reg, Item>(a214, a216); origami_utils::swap<Reg, Item>(a218, a220); origami_utils::swap<Reg, Item>(a222, a224); origami_utils::swap<Reg, Item>(a226, a228); origami_utils::swap<Reg, Item>(a230, a232); origami_utils::swap<Reg, Item>(a234, a236); origami_utils::swap<Reg, Item>(a238, a240); origami_utils::swap<Reg, Item>(a242, a244); origami_utils::swap<Reg, Item>(a246, a248); origami_utils::swap<Reg, Item>(a250, a252); origami_utils::swap<Reg, Item>(a1, a129); origami_utils::swap<Reg, Item>(a65, a193); origami_utils::swap<Reg, Item>(a65, a129); origami_utils::swap<Reg, Item>(a33, a161); origami_utils::swap<Reg, Item>(a97, a225); origami_utils::swap<Reg, Item>(a97, a161); origami_utils::swap<Reg, Item>(a33, a65); origami_utils::swap<Reg, Item>(a97, a129); origami_utils::swap<Reg, Item>(a161, a193); origami_utils::swap<Reg, Item>(a17, a145); origami_utils::swap<Reg, Item>(a81, a209); origami_utils::swap<Reg, Item>(a81, a145); origami_utils::swap<Reg, Item>(a49, a177); origami_utils::swap<Reg, Item>(a113, a241); origami_utils::swap<Reg, Item>(a113, a177); origami_utils::swap<Reg, Item>(a49, a81); origami_utils::swap<Reg, Item>(a113, a145); origami_utils::swap<Reg, Item>(a177, a209); origami_utils::swap<Reg, Item>(a17, a33); origami_utils::swap<Reg, Item>(a49, a65); origami_utils::swap<Reg, Item>(a81, a97); origami_utils::swap<Reg, Item>(a113, a129); origami_utils::swap<Reg, Item>(a145, a161); origami_utils::swap<Reg, Item>(a177, a193); origami_utils::swap<Reg, Item>(a209, a225); origami_utils::swap<Reg, Item>(a9, a137); origami_utils::swap<Reg, Item>(a73, a201); origami_utils::swap<Reg, Item>(a73, a137); origami_utils::swap<Reg, Item>(a41, a169); origami_utils::swap<Reg, Item>(a105, a233); origami_utils::swap<Reg, Item>(a105, a169); origami_utils::swap<Reg, Item>(a41, a73); origami_utils::swap<Reg, Item>(a105, a137); origami_utils::swap<Reg, Item>(a169, a201); origami_utils::swap<Reg, Item>(a25, a153); origami_utils::swap<Reg, Item>(a89, a217); origami_utils::swap<Reg, Item>(a89, a153); origami_utils::swap<Reg, Item>(a57, a185); origami_utils::swap<Reg, Item>(a121, a249); origami_utils::swap<Reg, Item>(a121, a185); origami_utils::swap<Reg, Item>(a57, a89); origami_utils::swap<Reg, Item>(a121, a153); origami_utils::swap<Reg, Item>(a185, a217); origami_utils::swap<Reg, Item>(a25, a41); origami_utils::swap<Reg, Item>(a57, a73); origami_utils::swap<Reg, Item>(a89, a105); origami_utils::swap<Reg, Item>(a121, a137); origami_utils::swap<Reg, Item>(a153, a169); origami_utils::swap<Reg, Item>(a185, a201); origami_utils::swap<Reg, Item>(a217, a233); origami_utils::swap<Reg, Item>(a9, a17); origami_utils::swap<Reg, Item>(a25, a33); origami_utils::swap<Reg, Item>(a41, a49); origami_utils::swap<Reg, Item>(a57, a65); origami_utils::swap<Reg, Item>(a73, a81); origami_utils::swap<Reg, Item>(a89, a97); origami_utils::swap<Reg, Item>(a105, a113); origami_utils::swap<Reg, Item>(a121, a129); origami_utils::swap<Reg, Item>(a137, a145); origami_utils::swap<Reg, Item>(a153, a161); origami_utils::swap<Reg, Item>(a169, a177); origami_utils::swap<Reg, Item>(a185, a193); origami_utils::swap<Reg, Item>(a201, a209); origami_utils::swap<Reg, Item>(a217, a225); origami_utils::swap<Reg, Item>(a233, a241); origami_utils::swap<Reg, Item>(a5, a133); origami_utils::swap<Reg, Item>(a69, a197); origami_utils::swap<Reg, Item>(a69, a133); origami_utils::swap<Reg, Item>(a37, a165); origami_utils::swap<Reg, Item>(a101, a229); origami_utils::swap<Reg, Item>(a101, a165); origami_utils::swap<Reg, Item>(a37, a69); origami_utils::swap<Reg, Item>(a101, a133); origami_utils::swap<Reg, Item>(a165, a197); origami_utils::swap<Reg, Item>(a21, a149); origami_utils::swap<Reg, Item>(a85, a213); origami_utils::swap<Reg, Item>(a85, a149); origami_utils::swap<Reg, Item>(a53, a181); origami_utils::swap<Reg, Item>(a117, a245); origami_utils::swap<Reg, Item>(a117, a181); origami_utils::swap<Reg, Item>(a53, a85); origami_utils::swap<Reg, Item>(a117, a149); origami_utils::swap<Reg, Item>(a181, a213); origami_utils::swap<Reg, Item>(a21, a37); origami_utils::swap<Reg, Item>(a53, a69); origami_utils::swap<Reg, Item>(a85, a101); origami_utils::swap<Reg, Item>(a117, a133); origami_utils::swap<Reg, Item>(a149, a165); origami_utils::swap<Reg, Item>(a181, a197); origami_utils::swap<Reg, Item>(a213, a229); origami_utils::swap<Reg, Item>(a13, a141); origami_utils::swap<Reg, Item>(a77, a205); origami_utils::swap<Reg, Item>(a77, a141); origami_utils::swap<Reg, Item>(a45, a173); origami_utils::swap<Reg, Item>(a109, a237); origami_utils::swap<Reg, Item>(a109, a173); origami_utils::swap<Reg, Item>(a45, a77); origami_utils::swap<Reg, Item>(a109, a141); origami_utils::swap<Reg, Item>(a173, a205); origami_utils::swap<Reg, Item>(a29, a157); origami_utils::swap<Reg, Item>(a93, a221); origami_utils::swap<Reg, Item>(a93, a157); origami_utils::swap<Reg, Item>(a61, a189); origami_utils::swap<Reg, Item>(a125, a253); origami_utils::swap<Reg, Item>(a125, a189); origami_utils::swap<Reg, Item>(a61, a93); origami_utils::swap<Reg, Item>(a125, a157); origami_utils::swap<Reg, Item>(a189, a221); origami_utils::swap<Reg, Item>(a29, a45); origami_utils::swap<Reg, Item>(a61, a77); origami_utils::swap<Reg, Item>(a93, a109); origami_utils::swap<Reg, Item>(a125, a141); origami_utils::swap<Reg, Item>(a157, a173); origami_utils::swap<Reg, Item>(a189, a205); origami_utils::swap<Reg, Item>(a221, a237); origami_utils::swap<Reg, Item>(a13, a21); origami_utils::swap<Reg, Item>(a29, a37); origami_utils::swap<Reg, Item>(a45, a53); origami_utils::swap<Reg, Item>(a61, a69); origami_utils::swap<Reg, Item>(a77, a85); origami_utils::swap<Reg, Item>(a93, a101); origami_utils::swap<Reg, Item>(a109, a117); origami_utils::swap<Reg, Item>(a125, a133); origami_utils::swap<Reg, Item>(a141, a149); origami_utils::swap<Reg, Item>(a157, a165); origami_utils::swap<Reg, Item>(a173, a181); origami_utils::swap<Reg, Item>(a189, a197); origami_utils::swap<Reg, Item>(a205, a213); origami_utils::swap<Reg, Item>(a221, a229); origami_utils::swap<Reg, Item>(a237, a245); origami_utils::swap<Reg, Item>(a5, a9); origami_utils::swap<Reg, Item>(a13, a17); origami_utils::swap<Reg, Item>(a21, a25); origami_utils::swap<Reg, Item>(a29, a33); origami_utils::swap<Reg, Item>(a37, a41); origami_utils::swap<Reg, Item>(a45, a49); origami_utils::swap<Reg, Item>(a53, a57); origami_utils::swap<Reg, Item>(a61, a65); origami_utils::swap<Reg, Item>(a69, a73); origami_utils::swap<Reg, Item>(a77, a81); origami_utils::swap<Reg, Item>(a85, a89); origami_utils::swap<Reg, Item>(a93, a97); origami_utils::swap<Reg, Item>(a101, a105); origami_utils::swap<Reg, Item>(a109, a113); origami_utils::swap<Reg, Item>(a117, a121); origami_utils::swap<Reg, Item>(a125, a129); origami_utils::swap<Reg, Item>(a133, a137); origami_utils::swap<Reg, Item>(a141, a145); origami_utils::swap<Reg, Item>(a149, a153); origami_utils::swap<Reg, Item>(a157, a161); origami_utils::swap<Reg, Item>(a165, a169); origami_utils::swap<Reg, Item>(a173, a177); origami_utils::swap<Reg, Item>(a181, a185); origami_utils::swap<Reg, Item>(a189, a193); origami_utils::swap<Reg, Item>(a197, a201); origami_utils::swap<Reg, Item>(a205, a209); origami_utils::swap<Reg, Item>(a213, a217); origami_utils::swap<Reg, Item>(a221, a225); origami_utils::swap<Reg, Item>(a229, a233); origami_utils::swap<Reg, Item>(a237, a241); origami_utils::swap<Reg, Item>(a245, a249); origami_utils::swap<Reg, Item>(a3, a131); origami_utils::swap<Reg, Item>(a67, a195); origami_utils::swap<Reg, Item>(a67, a131); origami_utils::swap<Reg, Item>(a35, a163); origami_utils::swap<Reg, Item>(a99, a227); origami_utils::swap<Reg, Item>(a99, a163); origami_utils::swap<Reg, Item>(a35, a67); origami_utils::swap<Reg, Item>(a99, a131); origami_utils::swap<Reg, Item>(a163, a195); origami_utils::swap<Reg, Item>(a19, a147); origami_utils::swap<Reg, Item>(a83, a211); origami_utils::swap<Reg, Item>(a83, a147); origami_utils::swap<Reg, Item>(a51, a179); origami_utils::swap<Reg, Item>(a115, a243); origami_utils::swap<Reg, Item>(a115, a179); origami_utils::swap<Reg, Item>(a51, a83); origami_utils::swap<Reg, Item>(a115, a147); origami_utils::swap<Reg, Item>(a179, a211); origami_utils::swap<Reg, Item>(a19, a35); origami_utils::swap<Reg, Item>(a51, a67); origami_utils::swap<Reg, Item>(a83, a99); origami_utils::swap<Reg, Item>(a115, a131); origami_utils::swap<Reg, Item>(a147, a163); origami_utils::swap<Reg, Item>(a179, a195); origami_utils::swap<Reg, Item>(a211, a227); origami_utils::swap<Reg, Item>(a11, a139); origami_utils::swap<Reg, Item>(a75, a203); origami_utils::swap<Reg, Item>(a75, a139); origami_utils::swap<Reg, Item>(a43, a171); origami_utils::swap<Reg, Item>(a107, a235); origami_utils::swap<Reg, Item>(a107, a171); origami_utils::swap<Reg, Item>(a43, a75); origami_utils::swap<Reg, Item>(a107, a139); origami_utils::swap<Reg, Item>(a171, a203); origami_utils::swap<Reg, Item>(a27, a155); origami_utils::swap<Reg, Item>(a91, a219); origami_utils::swap<Reg, Item>(a91, a155); origami_utils::swap<Reg, Item>(a59, a187); origami_utils::swap<Reg, Item>(a123, a251); origami_utils::swap<Reg, Item>(a123, a187); origami_utils::swap<Reg, Item>(a59, a91); origami_utils::swap<Reg, Item>(a123, a155); origami_utils::swap<Reg, Item>(a187, a219); origami_utils::swap<Reg, Item>(a27, a43); origami_utils::swap<Reg, Item>(a59, a75); origami_utils::swap<Reg, Item>(a91, a107); origami_utils::swap<Reg, Item>(a123, a139); origami_utils::swap<Reg, Item>(a155, a171); origami_utils::swap<Reg, Item>(a187, a203); origami_utils::swap<Reg, Item>(a219, a235); origami_utils::swap<Reg, Item>(a11, a19); origami_utils::swap<Reg, Item>(a27, a35); origami_utils::swap<Reg, Item>(a43, a51); origami_utils::swap<Reg, Item>(a59, a67); origami_utils::swap<Reg, Item>(a75, a83); origami_utils::swap<Reg, Item>(a91, a99); origami_utils::swap<Reg, Item>(a107, a115); origami_utils::swap<Reg, Item>(a123, a131); origami_utils::swap<Reg, Item>(a139, a147); origami_utils::swap<Reg, Item>(a155, a163); origami_utils::swap<Reg, Item>(a171, a179); origami_utils::swap<Reg, Item>(a187, a195); origami_utils::swap<Reg, Item>(a203, a211); origami_utils::swap<Reg, Item>(a219, a227); origami_utils::swap<Reg, Item>(a235, a243); origami_utils::swap<Reg, Item>(a7, a135); origami_utils::swap<Reg, Item>(a71, a199); origami_utils::swap<Reg, Item>(a71, a135); origami_utils::swap<Reg, Item>(a39, a167); origami_utils::swap<Reg, Item>(a103, a231); origami_utils::swap<Reg, Item>(a103, a167); origami_utils::swap<Reg, Item>(a39, a71); origami_utils::swap<Reg, Item>(a103, a135); origami_utils::swap<Reg, Item>(a167, a199); origami_utils::swap<Reg, Item>(a23, a151); origami_utils::swap<Reg, Item>(a87, a215); origami_utils::swap<Reg, Item>(a87, a151); origami_utils::swap<Reg, Item>(a55, a183); origami_utils::swap<Reg, Item>(a119, a247); origami_utils::swap<Reg, Item>(a119, a183); origami_utils::swap<Reg, Item>(a55, a87); origami_utils::swap<Reg, Item>(a119, a151); origami_utils::swap<Reg, Item>(a183, a215); origami_utils::swap<Reg, Item>(a23, a39); origami_utils::swap<Reg, Item>(a55, a71); origami_utils::swap<Reg, Item>(a87, a103); origami_utils::swap<Reg, Item>(a119, a135); origami_utils::swap<Reg, Item>(a151, a167); origami_utils::swap<Reg, Item>(a183, a199); origami_utils::swap<Reg, Item>(a215, a231); origami_utils::swap<Reg, Item>(a15, a143); origami_utils::swap<Reg, Item>(a79, a207); origami_utils::swap<Reg, Item>(a79, a143); origami_utils::swap<Reg, Item>(a47, a175); origami_utils::swap<Reg, Item>(a111, a239); origami_utils::swap<Reg, Item>(a111, a175); origami_utils::swap<Reg, Item>(a47, a79); origami_utils::swap<Reg, Item>(a111, a143); origami_utils::swap<Reg, Item>(a175, a207); origami_utils::swap<Reg, Item>(a31, a159); origami_utils::swap<Reg, Item>(a95, a223); origami_utils::swap<Reg, Item>(a95, a159); origami_utils::swap<Reg, Item>(a63, a191); origami_utils::swap<Reg, Item>(a127, a255); origami_utils::swap<Reg, Item>(a127, a191); origami_utils::swap<Reg, Item>(a63, a95); origami_utils::swap<Reg, Item>(a127, a159); origami_utils::swap<Reg, Item>(a191, a223); origami_utils::swap<Reg, Item>(a31, a47); origami_utils::swap<Reg, Item>(a63, a79); origami_utils::swap<Reg, Item>(a95, a111); origami_utils::swap<Reg, Item>(a127, a143); origami_utils::swap<Reg, Item>(a159, a175); origami_utils::swap<Reg, Item>(a191, a207); origami_utils::swap<Reg, Item>(a223, a239); origami_utils::swap<Reg, Item>(a15, a23); origami_utils::swap<Reg, Item>(a31, a39); origami_utils::swap<Reg, Item>(a47, a55); origami_utils::swap<Reg, Item>(a63, a71); origami_utils::swap<Reg, Item>(a79, a87); origami_utils::swap<Reg, Item>(a95, a103); origami_utils::swap<Reg, Item>(a111, a119); origami_utils::swap<Reg, Item>(a127, a135); origami_utils::swap<Reg, Item>(a143, a151); origami_utils::swap<Reg, Item>(a159, a167); origami_utils::swap<Reg, Item>(a175, a183); origami_utils::swap<Reg, Item>(a191, a199); origami_utils::swap<Reg, Item>(a207, a215); origami_utils::swap<Reg, Item>(a223, a231); origami_utils::swap<Reg, Item>(a239, a247); origami_utils::swap<Reg, Item>(a7, a11); origami_utils::swap<Reg, Item>(a15, a19); origami_utils::swap<Reg, Item>(a23, a27); origami_utils::swap<Reg, Item>(a31, a35); origami_utils::swap<Reg, Item>(a39, a43); origami_utils::swap<Reg, Item>(a47, a51); origami_utils::swap<Reg, Item>(a55, a59); origami_utils::swap<Reg, Item>(a63, a67); origami_utils::swap<Reg, Item>(a71, a75); origami_utils::swap<Reg, Item>(a79, a83); origami_utils::swap<Reg, Item>(a87, a91); origami_utils::swap<Reg, Item>(a95, a99); origami_utils::swap<Reg, Item>(a103, a107); origami_utils::swap<Reg, Item>(a111, a115); origami_utils::swap<Reg, Item>(a119, a123); origami_utils::swap<Reg, Item>(a127, a131); origami_utils::swap<Reg, Item>(a135, a139); origami_utils::swap<Reg, Item>(a143, a147); origami_utils::swap<Reg, Item>(a151, a155); origami_utils::swap<Reg, Item>(a159, a163); origami_utils::swap<Reg, Item>(a167, a171); origami_utils::swap<Reg, Item>(a175, a179); origami_utils::swap<Reg, Item>(a183, a187); origami_utils::swap<Reg, Item>(a191, a195); origami_utils::swap<Reg, Item>(a199, a203); origami_utils::swap<Reg, Item>(a207, a211); origami_utils::swap<Reg, Item>(a215, a219); origami_utils::swap<Reg, Item>(a223, a227); origami_utils::swap<Reg, Item>(a231, a235); origami_utils::swap<Reg, Item>(a239, a243); origami_utils::swap<Reg, Item>(a247, a251); origami_utils::swap<Reg, Item>(a3, a5); origami_utils::swap<Reg, Item>(a7, a9); origami_utils::swap<Reg, Item>(a11, a13); origami_utils::swap<Reg, Item>(a15, a17); origami_utils::swap<Reg, Item>(a19, a21); origami_utils::swap<Reg, Item>(a23, a25); origami_utils::swap<Reg, Item>(a27, a29); origami_utils::swap<Reg, Item>(a31, a33); origami_utils::swap<Reg, Item>(a35, a37); origami_utils::swap<Reg, Item>(a39, a41); origami_utils::swap<Reg, Item>(a43, a45); origami_utils::swap<Reg, Item>(a47, a49); origami_utils::swap<Reg, Item>(a51, a53); origami_utils::swap<Reg, Item>(a55, a57); origami_utils::swap<Reg, Item>(a59, a61); origami_utils::swap<Reg, Item>(a63, a65); origami_utils::swap<Reg, Item>(a67, a69); origami_utils::swap<Reg, Item>(a71, a73); origami_utils::swap<Reg, Item>(a75, a77); origami_utils::swap<Reg, Item>(a79, a81); origami_utils::swap<Reg, Item>(a83, a85); origami_utils::swap<Reg, Item>(a87, a89); origami_utils::swap<Reg, Item>(a91, a93); origami_utils::swap<Reg, Item>(a95, a97); origami_utils::swap<Reg, Item>(a99, a101); origami_utils::swap<Reg, Item>(a103, a105); origami_utils::swap<Reg, Item>(a107, a109); origami_utils::swap<Reg, Item>(a111, a113); origami_utils::swap<Reg, Item>(a115, a117); origami_utils::swap<Reg, Item>(a119, a121); origami_utils::swap<Reg, Item>(a123, a125); origami_utils::swap<Reg, Item>(a127, a129); origami_utils::swap<Reg, Item>(a131, a133); origami_utils::swap<Reg, Item>(a135, a137); origami_utils::swap<Reg, Item>(a139, a141); origami_utils::swap<Reg, Item>(a143, a145); origami_utils::swap<Reg, Item>(a147, a149); origami_utils::swap<Reg, Item>(a151, a153); origami_utils::swap<Reg, Item>(a155, a157); origami_utils::swap<Reg, Item>(a159, a161); origami_utils::swap<Reg, Item>(a163, a165); origami_utils::swap<Reg, Item>(a167, a169); origami_utils::swap<Reg, Item>(a171, a173); origami_utils::swap<Reg, Item>(a175, a177); origami_utils::swap<Reg, Item>(a179, a181); origami_utils::swap<Reg, Item>(a183, a185); origami_utils::swap<Reg, Item>(a187, a189); origami_utils::swap<Reg, Item>(a191, a193); origami_utils::swap<Reg, Item>(a195, a197); origami_utils::swap<Reg, Item>(a199, a201); origami_utils::swap<Reg, Item>(a203, a205); origami_utils::swap<Reg, Item>(a207, a209); origami_utils::swap<Reg, Item>(a211, a213); origami_utils::swap<Reg, Item>(a215, a217); origami_utils::swap<Reg, Item>(a219, a221); origami_utils::swap<Reg, Item>(a223, a225); origami_utils::swap<Reg, Item>(a227, a229); origami_utils::swap<Reg, Item>(a231, a233); origami_utils::swap<Reg, Item>(a235, a237); origami_utils::swap<Reg, Item>(a239, a241); origami_utils::swap<Reg, Item>(a243, a245); origami_utils::swap<Reg, Item>(a247, a249); origami_utils::swap<Reg, Item>(a251, a253); origami_utils::swap<Reg, Item>(a1, a2); origami_utils::swap<Reg, Item>(a3, a4); origami_utils::swap<Reg, Item>(a5, a6); origami_utils::swap<Reg, Item>(a7, a8); origami_utils::swap<Reg, Item>(a9, a10); origami_utils::swap<Reg, Item>(a11, a12); origami_utils::swap<Reg, Item>(a13, a14); origami_utils::swap<Reg, Item>(a15, a16); origami_utils::swap<Reg, Item>(a17, a18); origami_utils::swap<Reg, Item>(a19, a20); origami_utils::swap<Reg, Item>(a21, a22); origami_utils::swap<Reg, Item>(a23, a24); origami_utils::swap<Reg, Item>(a25, a26); origami_utils::swap<Reg, Item>(a27, a28); origami_utils::swap<Reg, Item>(a29, a30); origami_utils::swap<Reg, Item>(a31, a32); origami_utils::swap<Reg, Item>(a33, a34); origami_utils::swap<Reg, Item>(a35, a36); origami_utils::swap<Reg, Item>(a37, a38); origami_utils::swap<Reg, Item>(a39, a40); origami_utils::swap<Reg, Item>(a41, a42); origami_utils::swap<Reg, Item>(a43, a44); origami_utils::swap<Reg, Item>(a45, a46); origami_utils::swap<Reg, Item>(a47, a48); origami_utils::swap<Reg, Item>(a49, a50); origami_utils::swap<Reg, Item>(a51, a52); origami_utils::swap<Reg, Item>(a53, a54); origami_utils::swap<Reg, Item>(a55, a56); origami_utils::swap<Reg, Item>(a57, a58); origami_utils::swap<Reg, Item>(a59, a60); origami_utils::swap<Reg, Item>(a61, a62); origami_utils::swap<Reg, Item>(a63, a64); origami_utils::swap<Reg, Item>(a65, a66); origami_utils::swap<Reg, Item>(a67, a68); origami_utils::swap<Reg, Item>(a69, a70); origami_utils::swap<Reg, Item>(a71, a72); origami_utils::swap<Reg, Item>(a73, a74); origami_utils::swap<Reg, Item>(a75, a76); origami_utils::swap<Reg, Item>(a77, a78); origami_utils::swap<Reg, Item>(a79, a80); origami_utils::swap<Reg, Item>(a81, a82); origami_utils::swap<Reg, Item>(a83, a84); origami_utils::swap<Reg, Item>(a85, a86); origami_utils::swap<Reg, Item>(a87, a88); origami_utils::swap<Reg, Item>(a89, a90); origami_utils::swap<Reg, Item>(a91, a92); origami_utils::swap<Reg, Item>(a93, a94); origami_utils::swap<Reg, Item>(a95, a96); origami_utils::swap<Reg, Item>(a97, a98); origami_utils::swap<Reg, Item>(a99, a100); origami_utils::swap<Reg, Item>(a101, a102); origami_utils::swap<Reg, Item>(a103, a104); origami_utils::swap<Reg, Item>(a105, a106); origami_utils::swap<Reg, Item>(a107, a108); origami_utils::swap<Reg, Item>(a109, a110); origami_utils::swap<Reg, Item>(a111, a112); origami_utils::swap<Reg, Item>(a113, a114); origami_utils::swap<Reg, Item>(a115, a116); origami_utils::swap<Reg, Item>(a117, a118); origami_utils::swap<Reg, Item>(a119, a120); origami_utils::swap<Reg, Item>(a121, a122); origami_utils::swap<Reg, Item>(a123, a124); origami_utils::swap<Reg, Item>(a125, a126); origami_utils::swap<Reg, Item>(a127, a128); origami_utils::swap<Reg, Item>(a129, a130); origami_utils::swap<Reg, Item>(a131, a132); origami_utils::swap<Reg, Item>(a133, a134); origami_utils::swap<Reg, Item>(a135, a136); origami_utils::swap<Reg, Item>(a137, a138); origami_utils::swap<Reg, Item>(a139, a140); origami_utils::swap<Reg, Item>(a141, a142); origami_utils::swap<Reg, Item>(a143, a144); origami_utils::swap<Reg, Item>(a145, a146); origami_utils::swap<Reg, Item>(a147, a148); origami_utils::swap<Reg, Item>(a149, a150); origami_utils::swap<Reg, Item>(a151, a152); origami_utils::swap<Reg, Item>(a153, a154); origami_utils::swap<Reg, Item>(a155, a156); origami_utils::swap<Reg, Item>(a157, a158); origami_utils::swap<Reg, Item>(a159, a160); origami_utils::swap<Reg, Item>(a161, a162); origami_utils::swap<Reg, Item>(a163, a164); origami_utils::swap<Reg, Item>(a165, a166); origami_utils::swap<Reg, Item>(a167, a168); origami_utils::swap<Reg, Item>(a169, a170); origami_utils::swap<Reg, Item>(a171, a172); origami_utils::swap<Reg, Item>(a173, a174); origami_utils::swap<Reg, Item>(a175, a176); origami_utils::swap<Reg, Item>(a177, a178); origami_utils::swap<Reg, Item>(a179, a180); origami_utils::swap<Reg, Item>(a181, a182); origami_utils::swap<Reg, Item>(a183, a184); origami_utils::swap<Reg, Item>(a185, a186); origami_utils::swap<Reg, Item>(a187, a188); origami_utils::swap<Reg, Item>(a189, a190); origami_utils::swap<Reg, Item>(a191, a192); origami_utils::swap<Reg, Item>(a193, a194); origami_utils::swap<Reg, Item>(a195, a196); origami_utils::swap<Reg, Item>(a197, a198); origami_utils::swap<Reg, Item>(a199, a200); origami_utils::swap<Reg, Item>(a201, a202); origami_utils::swap<Reg, Item>(a203, a204); origami_utils::swap<Reg, Item>(a205, a206); origami_utils::swap<Reg, Item>(a207, a208); origami_utils::swap<Reg, Item>(a209, a210); origami_utils::swap<Reg, Item>(a211, a212); origami_utils::swap<Reg, Item>(a213, a214); origami_utils::swap<Reg, Item>(a215, a216); origami_utils::swap<Reg, Item>(a217, a218); origami_utils::swap<Reg, Item>(a219, a220); origami_utils::swap<Reg, Item>(a221, a222); origami_utils::swap<Reg, Item>(a223, a224); origami_utils::swap<Reg, Item>(a225, a226); origami_utils::swap<Reg, Item>(a227, a228); origami_utils::swap<Reg, Item>(a229, a230); origami_utils::swap<Reg, Item>(a231, a232); origami_utils::swap<Reg, Item>(a233, a234); origami_utils::swap<Reg, Item>(a235, a236); origami_utils::swap<Reg, Item>(a237, a238); origami_utils::swap<Reg, Item>(a239, a240); origami_utils::swap<Reg, Item>(a241, a242); origami_utils::swap<Reg, Item>(a243, a244); origami_utils::swap<Reg, Item>(a245, a246); origami_utils::swap<Reg, Item>(a247, a248); origami_utils::swap<Reg, Item>(a249, a250); origami_utils::swap<Reg, Item>(a251, a252); origami_utils::swap<Reg, Item>(a253, a254);
-
+		
 		mrmerge_sort_reg<Reg, Item>(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31);
 		mrmerge_sort_reg<Reg, Item>(a32, a33, a34, a35, a36, a37, a38, a39, a40, a41, a42, a43, a44, a45, a46, a47, a48, a49, a50, a51, a52, a53, a54, a55, a56, a57, a58, a59, a60, a61, a62, a63);
 		mrmerge_sort_reg<Reg, Item>(a64, a65, a66, a67, a68, a69, a70, a71, a72, a73, a74, a75, a76, a77, a78, a79, a80, a81, a82, a83, a84, a85, a86, a87, a88, a89, a90, a91, a92, a93, a94, a95);
@@ -2642,7 +2642,7 @@ namespace origami_sorter {
 		SWAPKV2(25, 26);
 		SWAPKV2(27, 28);
 		SWAPKV2(29, 30);
-
+		
 		d2 = (char*)d;
 		*(KeyType*)d2 = a0; *((ValueType*)(d2 + KeySize)) = b0; d2 += ItemSize;
 		*(KeyType*)d2 = a1; *((ValueType*)(d2 + KeySize)) = b1; d2 += ItemSize;
@@ -3371,9 +3371,9 @@ namespace origami_sorter {
 			// do scalar sorting network
 			Reg a0, a1, a2, a3, a4, a5, a6, a7;
 			Reg* d2 = (Reg*)d, * o2 = (Reg*)o;
-			origami_utils::load<Reg>(a0, d2 + 0); origami_utils::load<Reg>(a1, d2 + 1); origami_utils::load<Reg>(a2, d2 + 2); origami_utils::load<Reg>(a3, d2 + 3); origami_utils::load<Reg>(a4, d2 + 4); origami_utils::load<Reg>(a5, d2 + 5); origami_utils::load<Reg>(a6, d2 + 6); origami_utils::load<Reg>(a7, d2 + 7);
+			origami_utils::load<Reg>(a0, d2 + 0); origami_utils::load<Reg>(a1, d2 + 1); origami_utils::load<Reg>(a2, d2 + 2); origami_utils::load<Reg>(a3, d2 + 3); origami_utils::load<Reg>(a4, d2 + 4); origami_utils::load<Reg>(a5, d2 + 5); origami_utils::load<Reg>(a6, d2 + 6); origami_utils::load<Reg>(a7, d2 + 7); 
 			origami_sorter::in_register_sort8<Item, Reg>(a0, a1, a2, a3, a4, a5, a6, a7);
-			origami_utils::store<Reg>(a0, o2 + 0); origami_utils::store<Reg>(a1, o2 + 1); origami_utils::store<Reg>(a2, o2 + 2); origami_utils::store<Reg>(a3, o2 + 3); origami_utils::store<Reg>(a4, o2 + 4); origami_utils::store<Reg>(a5, o2 + 5); origami_utils::store<Reg>(a6, o2 + 6); origami_utils::store<Reg>(a7, o2 + 7);
+			origami_utils::store<Reg>(a0, o2 + 0); origami_utils::store<Reg>(a1, o2 + 1); origami_utils::store<Reg>(a2, o2 + 2); origami_utils::store<Reg>(a3, o2 + 3); origami_utils::store<Reg>(a4, o2 + 4); origami_utils::store<Reg>(a5, o2 + 5); origami_utils::store<Reg>(a6, o2 + 6); origami_utils::store<Reg>(a7, o2 + 7); 
 		}
 	}
 
@@ -3382,14 +3382,14 @@ namespace origami_sorter {
 		if constexpr (sizeof(Item) == sizeof(Reg)) {
 			// do scalar sorting network
 			Reg a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15;
-			Reg* d2 = (Reg*)d, * o2 = (Reg*)o;
+			Reg* d2 = (Reg*)d, *o2 = (Reg*)o;
 			origami_utils::load<Reg>(a0, d2 + 0); origami_utils::load<Reg>(a1, d2 + 1); origami_utils::load<Reg>(a2, d2 + 2); origami_utils::load<Reg>(a3, d2 + 3); origami_utils::load<Reg>(a4, d2 + 4); origami_utils::load<Reg>(a5, d2 + 5); origami_utils::load<Reg>(a6, d2 + 6); origami_utils::load<Reg>(a7, d2 + 7); origami_utils::load<Reg>(a8, d2 + 8); origami_utils::load<Reg>(a9, d2 + 9); origami_utils::load<Reg>(a10, d2 + 10); origami_utils::load<Reg>(a11, d2 + 11); origami_utils::load<Reg>(a12, d2 + 12); origami_utils::load<Reg>(a13, d2 + 13); origami_utils::load<Reg>(a14, d2 + 14); origami_utils::load<Reg>(a15, d2 + 15);
 			origami_sorter::in_register_sort16<Item, Reg>(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15);
 			origami_utils::store<Reg>(a0, o2 + 0); origami_utils::store<Reg>(a1, o2 + 1); origami_utils::store<Reg>(a2, o2 + 2); origami_utils::store<Reg>(a3, o2 + 3); origami_utils::store<Reg>(a4, o2 + 4); origami_utils::store<Reg>(a5, o2 + 5); origami_utils::store<Reg>(a6, o2 + 6); origami_utils::store<Reg>(a7, o2 + 7); origami_utils::store<Reg>(a8, o2 + 8); origami_utils::store<Reg>(a9, o2 + 9); origami_utils::store<Reg>(a10, o2 + 10); origami_utils::store<Reg>(a11, o2 + 11); origami_utils::store<Reg>(a12, o2 + 12); origami_utils::store<Reg>(a13, o2 + 13); origami_utils::store<Reg>(a14, o2 + 14); origami_utils::store<Reg>(a15, o2 + 15);
 		}
 	}
 
-
+	
 	template <typename Item, typename Reg>
 	FORCEINLINE void Sort32(Item* d, Item* o) {
 		if constexpr (sizeof(Item) == sizeof(Reg)) {
@@ -3436,31 +3436,31 @@ namespace origami_sorter {
 			ReportError("phase1_sortN: invalid W and _SWITCH; should be W < _SWITCH");
 		if constexpr (_SWITCH == 8) {
 			if constexpr (W == 2) {
-				_a0 = a0; _a1 = a2; _a2 = a4; _a3 = a6;
+				_a0 = a0; _a1 = a2; _a2 = a4; _a3 = a6; 
 				_a4 = a8; _a5 = a10; _a6 = a12; _a7 = a14;
-				_a8 = a1; _a9 = a3; _a10 = a5; _a11 = a7;
+				_a8 = a1; _a9 = a3; _a10 = a5; _a11 = a7; 
 				_a12 = a9; _a13 = a11; _a14 = a13; _a15 = a15;
-				_a16 = a16; _a17 = a18; _a18 = a20; _a19 = a22;
+				_a16 = a16; _a17 = a18; _a18 = a20; _a19 = a22; 
 				_a20 = a24; _a21 = a26; _a22 = a28; _a23 = a30;
-				_a24 = a17; _a25 = a19; _a26 = a21; _a27 = a23;
+				_a24 = a17; _a25 = a19; _a26 = a21; _a27 = a23; 
 				_a28 = a25; _a29 = a27; _a30 = a29; _a31 = a31;
 			}
 			else if constexpr (W == 4) {
-				_a0 = a0; _a1 = a4;
+				_a0 = a0; _a1 = a4; 
 				_a2 = a8; _a3 = a12;
-				_a4 = a1; _a5 = a5;
+				_a4 = a1; _a5 = a5; 
 				_a6 = a9; _a7 = a13;
-				_a8 = a2; _a9 = a6;
+				_a8 = a2; _a9 = a6; 
 				_a10 = a10; _a11 = a14;
-				_a12 = a3; _a13 = a7;
+				_a12 = a3; _a13 = a7; 
 				_a14 = a11; _a15 = a15;
-				_a16 = a16; _a17 = a20;
+				_a16 = a16; _a17 = a20; 
 				_a18 = a24; _a19 = a28;
-				_a20 = a17; _a21 = a21;
+				_a20 = a17; _a21 = a21; 
 				_a22 = a25; _a23 = a29;
-				_a24 = a18; _a25 = a22;
+				_a24 = a18; _a25 = a22;	
 				_a26 = a26; _a27 = a30;
-				_a28 = a19; _a29 = a23;
+				_a28 = a19; _a29 = a23;	
 				_a30 = a27; _a31 = a31;
 			}
 			else if constexpr (W == 8) {
@@ -3673,7 +3673,7 @@ namespace origami_sorter {
 				*(i64*)d2 = a5; *((i64*)(d2 + KeySize)) = b5; d2 += ItemSize;
 				*(i64*)d2 = a6; *((i64*)(d2 + KeySize)) = b6; d2 += ItemSize;
 				*(i64*)d2 = a7; *((i64*)(d2 + KeySize)) = b7; d2 += ItemSize;*/
-
+				
 				if constexpr (N == 8) sort8_kv_scalar<Item, i64, i64>(d);
 				else if constexpr (N == 16) sort16_kv_scalar<Item, i64, i64>(d);
 				else if constexpr (N == 32) sort32_kv_scalar<Item, i64, i64>(d);
@@ -3686,16 +3686,16 @@ namespace origami_sorter {
 					origami_utils::load<Reg>(a0, d2 + 0); origami_utils::load<Reg>(a1, d2 + 1); origami_utils::load<Reg>(a2, d2 + 2); origami_utils::load<Reg>(a3, d2 + 3); origami_utils::load<Reg>(a4, d2 + 4); origami_utils::load<Reg>(a5, d2 + 5); origami_utils::load<Reg>(a6, d2 + 6); origami_utils::load<Reg>(a7, d2 + 7);
 					irl_sorter::in_register_sort8<Item, Reg>(a0, a1, a2, a3, a4, a5, a6, a7);
 					origami_utils::store<Reg>(a0, d2 + 0); origami_utils::store<Reg>(a1, d2 + 1); origami_utils::store<Reg>(a2, d2 + 2); origami_utils::store<Reg>(a3, d2 + 3); origami_utils::store<Reg>(a4, d2 + 4); origami_utils::store<Reg>(a5, d2 + 5); origami_utils::store<Reg>(a6, d2 + 6); origami_utils::store<Reg>(a7, d2 + 7);*/
-					Item a0, a1, a2, a3, a4, a5, a6, a7;
+					/*register*/ Item a0, a1, a2, a3, a4, a5, a6, a7;
 					a0 = d[0]; a1 = d[1]; a2 = d[2]; a3 = d[3]; a4 = d[4]; a5 = d[5]; a6 = d[6]; a7 = d[7];
 					SWAP2(0, 4); SWAP2(1, 5); SWAP2(2, 6); SWAP2(3, 7);
 					SWAP2(0, 2); SWAP2(1, 3); SWAP2(4, 6); SWAP2(5, 7);
-					SWAP2(2, 4); SWAP2(3, 5);
+					SWAP2(2, 4); SWAP2(3, 5); 
 					SWAP2(0, 1); SWAP2(2, 3); SWAP2(4, 5); SWAP2(6, 7);
-					SWAP2(1, 4); SWAP2(3, 6);
+					SWAP2(1, 4); SWAP2(3, 6); 
 					SWAP2(1, 2); SWAP2(3, 4); SWAP2(5, 6);
 					d[0] = a0; d[1] = a1; d[2] = a2; d[3] = a3; d[4] = a4; d[5] = a5; d[6] = a6; d[7] = a7;
-
+					
 				}
 				else if constexpr (N == 16) {
 					Reg a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15;
@@ -3722,10 +3722,10 @@ namespace origami_sorter {
 				}
 				else ReportError("phase1_sortN: invalid n for scalar");
 			}
-
+			
 		}
 		// vectorized
-		else {
+		else { 
 			if constexpr (NREG == 32) {
 				Reg a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31;
 				Reg* d2 = (Reg*)d;
@@ -3738,7 +3738,7 @@ namespace origami_sorter {
 				Reg* d2 = (Reg*)d;
 				origami_utils::load<Reg>(a0, d2 + 0); origami_utils::load<Reg>(a1, d2 + 1); origami_utils::load<Reg>(a2, d2 + 2); origami_utils::load<Reg>(a3, d2 + 3); origami_utils::load<Reg>(a4, d2 + 4); origami_utils::load<Reg>(a5, d2 + 5); origami_utils::load<Reg>(a6, d2 + 6); origami_utils::load<Reg>(a7, d2 + 7); origami_utils::load<Reg>(a8, d2 + 8); origami_utils::load<Reg>(a9, d2 + 9); origami_utils::load<Reg>(a10, d2 + 10); origami_utils::load<Reg>(a11, d2 + 11); origami_utils::load<Reg>(a12, d2 + 12); origami_utils::load<Reg>(a13, d2 + 13); origami_utils::load<Reg>(a14, d2 + 14); origami_utils::load<Reg>(a15, d2 + 15); origami_utils::load<Reg>(a16, d2 + 16); origami_utils::load<Reg>(a17, d2 + 17); origami_utils::load<Reg>(a18, d2 + 18); origami_utils::load<Reg>(a19, d2 + 19); origami_utils::load<Reg>(a20, d2 + 20); origami_utils::load<Reg>(a21, d2 + 21); origami_utils::load<Reg>(a22, d2 + 22); origami_utils::load<Reg>(a23, d2 + 23); origami_utils::load<Reg>(a24, d2 + 24); origami_utils::load<Reg>(a25, d2 + 25); origami_utils::load<Reg>(a26, d2 + 26); origami_utils::load<Reg>(a27, d2 + 27); origami_utils::load<Reg>(a28, d2 + 28); origami_utils::load<Reg>(a29, d2 + 29); origami_utils::load<Reg>(a30, d2 + 30); origami_utils::load<Reg>(a31, d2 + 31);
 				phase1_sort<Item, Reg, N, _SWITCH>(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31);
-
+				
 				origami_utils::load<Reg>(a32, d2 + 32); origami_utils::load<Reg>(a33, d2 + 33); origami_utils::load<Reg>(a34, d2 + 34); origami_utils::load<Reg>(a35, d2 + 35); origami_utils::load<Reg>(a36, d2 + 36); origami_utils::load<Reg>(a37, d2 + 37); origami_utils::load<Reg>(a38, d2 + 38); origami_utils::load<Reg>(a39, d2 + 39); origami_utils::load<Reg>(a40, d2 + 40); origami_utils::load<Reg>(a41, d2 + 41); origami_utils::load<Reg>(a42, d2 + 42); origami_utils::load<Reg>(a43, d2 + 43); origami_utils::load<Reg>(a44, d2 + 44); origami_utils::load<Reg>(a45, d2 + 45); origami_utils::load<Reg>(a46, d2 + 46); origami_utils::load<Reg>(a47, d2 + 47); origami_utils::load<Reg>(a48, d2 + 48); origami_utils::load<Reg>(a49, d2 + 49); origami_utils::load<Reg>(a50, d2 + 50); origami_utils::load<Reg>(a51, d2 + 51); origami_utils::load<Reg>(a52, d2 + 52); origami_utils::load<Reg>(a53, d2 + 53); origami_utils::load<Reg>(a54, d2 + 54); origami_utils::load<Reg>(a55, d2 + 55); origami_utils::load<Reg>(a56, d2 + 56); origami_utils::load<Reg>(a57, d2 + 57); origami_utils::load<Reg>(a58, d2 + 58); origami_utils::load<Reg>(a59, d2 + 59); origami_utils::load<Reg>(a60, d2 + 60); origami_utils::load<Reg>(a61, d2 + 61); origami_utils::load<Reg>(a62, d2 + 62); origami_utils::load<Reg>(a63, d2 + 63);
 				phase1_sort<Item, Reg, N, _SWITCH>(a32, a33, a34, a35, a36, a37, a38, a39, a40, a41, a42, a43, a44, a45, a46, a47, a48, a49, a50, a51, a52, a53, a54, a55, a56, a57, a58, a59, a60, a61, a62, a63);
 
@@ -3810,7 +3810,7 @@ namespace origami_sorter {
 				}
 				if constexpr (TARGET_REG == 128)
 					origami_sorter::mrmerge128R<Reg, Item>(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39, a40, a41, a42, a43, a44, a45, a46, a47, a48, a49, a50, a51, a52, a53, a54, a55, a56, a57, a58, a59, a60, a61, a62, a63, a64, a65, a66, a67, a68, a69, a70, a71, a72, a73, a74, a75, a76, a77, a78, a79, a80, a81, a82, a83, a84, a85, a86, a87, a88, a89, a90, a91, a92, a93, a94, a95, a96, a97, a98, a99, a100, a101, a102, a103, a104, a105, a106, a107, a108, a109, a110, a111, a112, a113, a114, a115, a116, a117, a118, a119, a120, a121, a122, a123, a124, a125, a126, a127);
-				origami_sorter::mrmerge128R<Reg, Item>(a128, a129, a130, a131, a132, a133, a134, a135, a136, a137, a138, a139, a140, a141, a142, a143, a144, a145, a146, a147, a148, a149, a150, a151, a152, a153, a154, a155, a156, a157, a158, a159, a160, a161, a162, a163, a164, a165, a166, a167, a168, a169, a170, a171, a172, a173, a174, a175, a176, a177, a178, a179, a180, a181, a182, a183, a184, a185, a186, a187, a188, a189, a190, a191, a192, a193, a194, a195, a196, a197, a198, a199, a200, a201, a202, a203, a204, a205, a206, a207, a208, a209, a210, a211, a212, a213, a214, a215, a216, a217, a218, a219, a220, a221, a222, a223, a224, a225, a226, a227, a228, a229, a230, a231, a232, a233, a234, a235, a236, a237, a238, a239, a240, a241, a242, a243, a244, a245, a246, a247, a248, a249, a250, a251, a252, a253, a254, a255);
+					origami_sorter::mrmerge128R<Reg, Item>(a128, a129, a130, a131, a132, a133, a134, a135, a136, a137, a138, a139, a140, a141, a142, a143, a144, a145, a146, a147, a148, a149, a150, a151, a152, a153, a154, a155, a156, a157, a158, a159, a160, a161, a162, a163, a164, a165, a166, a167, a168, a169, a170, a171, a172, a173, a174, a175, a176, a177, a178, a179, a180, a181, a182, a183, a184, a185, a186, a187, a188, a189, a190, a191, a192, a193, a194, a195, a196, a197, a198, a199, a200, a201, a202, a203, a204, a205, a206, a207, a208, a209, a210, a211, a212, a213, a214, a215, a216, a217, a218, a219, a220, a221, a222, a223, a224, a225, a226, a227, a228, a229, a230, a231, a232, a233, a234, a235, a236, a237, a238, a239, a240, a241, a242, a243, a244, a245, a246, a247, a248, a249, a250, a251, a252, a253, a254, a255);
 
 				origami_utils::store<Reg>(a0, d2 + 0); origami_utils::store<Reg>(a1, d2 + 1); origami_utils::store<Reg>(a2, d2 + 2); origami_utils::store<Reg>(a3, d2 + 3); origami_utils::store<Reg>(a4, d2 + 4); origami_utils::store<Reg>(a5, d2 + 5); origami_utils::store<Reg>(a6, d2 + 6); origami_utils::store<Reg>(a7, d2 + 7); origami_utils::store<Reg>(a8, d2 + 8); origami_utils::store<Reg>(a9, d2 + 9); origami_utils::store<Reg>(a10, d2 + 10); origami_utils::store<Reg>(a11, d2 + 11); origami_utils::store<Reg>(a12, d2 + 12); origami_utils::store<Reg>(a13, d2 + 13); origami_utils::store<Reg>(a14, d2 + 14); origami_utils::store<Reg>(a15, d2 + 15); origami_utils::store<Reg>(a16, d2 + 16); origami_utils::store<Reg>(a17, d2 + 17); origami_utils::store<Reg>(a18, d2 + 18); origami_utils::store<Reg>(a19, d2 + 19); origami_utils::store<Reg>(a20, d2 + 20); origami_utils::store<Reg>(a21, d2 + 21); origami_utils::store<Reg>(a22, d2 + 22); origami_utils::store<Reg>(a23, d2 + 23); origami_utils::store<Reg>(a24, d2 + 24); origami_utils::store<Reg>(a25, d2 + 25); origami_utils::store<Reg>(a26, d2 + 26); origami_utils::store<Reg>(a27, d2 + 27); origami_utils::store<Reg>(a28, d2 + 28); origami_utils::store<Reg>(a29, d2 + 29); origami_utils::store<Reg>(a30, d2 + 30); origami_utils::store<Reg>(a31, d2 + 31);
 				origami_utils::store<Reg>(a32, d2 + 32); origami_utils::store<Reg>(a33, d2 + 33); origami_utils::store<Reg>(a34, d2 + 34); origami_utils::store<Reg>(a35, d2 + 35); origami_utils::store<Reg>(a36, d2 + 36); origami_utils::store<Reg>(a37, d2 + 37); origami_utils::store<Reg>(a38, d2 + 38); origami_utils::store<Reg>(a39, d2 + 39); origami_utils::store<Reg>(a40, d2 + 40); origami_utils::store<Reg>(a41, d2 + 41); origami_utils::store<Reg>(a42, d2 + 42); origami_utils::store<Reg>(a43, d2 + 43); origami_utils::store<Reg>(a44, d2 + 44); origami_utils::store<Reg>(a45, d2 + 45); origami_utils::store<Reg>(a46, d2 + 46); origami_utils::store<Reg>(a47, d2 + 47); origami_utils::store<Reg>(a48, d2 + 48); origami_utils::store<Reg>(a49, d2 + 49); origami_utils::store<Reg>(a50, d2 + 50); origami_utils::store<Reg>(a51, d2 + 51); origami_utils::store<Reg>(a52, d2 + 52); origami_utils::store<Reg>(a53, d2 + 53); origami_utils::store<Reg>(a54, d2 + 54); origami_utils::store<Reg>(a55, d2 + 55); origami_utils::store<Reg>(a56, d2 + 56); origami_utils::store<Reg>(a57, d2 + 57); origami_utils::store<Reg>(a58, d2 + 58); origami_utils::store<Reg>(a59, d2 + 59); origami_utils::store<Reg>(a60, d2 + 60); origami_utils::store<Reg>(a61, d2 + 61); origami_utils::store<Reg>(a62, d2 + 62); origami_utils::store<Reg>(a63, d2 + 63);
@@ -3824,7 +3824,7 @@ namespace origami_sorter {
 
 		}
 
-
+		
 	}
 
 	// ----- Phase 2-3: large sort
@@ -3838,13 +3838,13 @@ namespace origami_sorter {
 		constexpr ui P1_INC = P1_NREG * sizeof(Reg) / sizeof(Item);
 		while (d2 < end) {
 			phase1_sort<Item, Reg, P1_NREG, P1_N, P1_SWITCH>(d2);
-			d2 += P1_INC;
+			d2 += P1_INC; 
 			//_mm_prefetch((char*)(d2 + 512), _MM_HINT_T2);		// -> hurts performance
 		}
 		ui64 nItems = end - d;
-		Item* src = d_back, * src_end = src + nItems;
+		Item* src = d_back, *src_end = src + nItems;
 		Item* dst = tmp_buf;
-
+		
 		return origami_merger::merge_series<Reg, Item, false, P2_MERGE_UNROLL, P2_MERGE_NREG_1x, P2_MERGE_NREG_2x, P2_MERGE_NREG_3x>(src, dst, nItems, P1_N, sort_size);
 	}
 
@@ -3888,20 +3888,19 @@ namespace origami_sorter {
 					ui64 merged_n = current_way * prev_sort_n;
 
 					origami_merge_tree::MergeTree<Reg, Item>* tree = nullptr;
-					if (current_way_pow & 1) tree = new origami_merge_tree::MergeTreeOdd<Reg, Item>(current_way, interim_buf, _MT_L1_BUFF_N, _MT_L2_BUFF_N);
-					else tree = new origami_merge_tree::MergeTreeEven<Reg, Item>(current_way, interim_buf, _MT_L1_BUFF_N, _MT_L2_BUFF_N);
+					if (current_way_pow & 1) tree = new origami_merge_tree::MergeTreeOdd<Reg, Item>();
+					else tree = new origami_merge_tree::MergeTreeEven<Reg, Item>();
 
-					//tree->merge_init(current_way, interim_buf, _MT_L1_BUFF_N, _MT_L2_BUFF_N);
+					tree->merge_init(current_way, interim_buf, _MT_L1_BUFF_N, _MT_L2_BUFF_N);
 
-					Item* p = src, * p_end = src + n_items, * pout = dst;
+					Item* p = src, * p_end = src + n_items, *pout = dst;
 					while (p < p_end) {
 						FOR(j, current_way, 1) {
 							X[j] = p;
 							endX[j] = p + prev_sort_n;
 							p += prev_sort_n;
 						}
-						//tree->merge(X, endX, pout, merged_n, _MT_L1_BUFF_N, _MT_L2_BUFF_N, interim_buf, current_way);
-						tree->merge(X, endX, pout, pout + merged_n);
+						tree->merge(X, endX, pout, merged_n, _MT_L1_BUFF_N, _MT_L2_BUFF_N, interim_buf, current_way);
 						pout += merged_n;
 					}
 					prev_sort_n = merged_n;
@@ -3947,7 +3946,7 @@ namespace origami_sorter {
 	const ui MAX_STREAMS = 256;
 	void*** p, ** pout;
 	void*** p_tmp;
-
+	
 	template <typename Item>
 	std::queue<kway_merge_job<Item>*> jobQueue;
 	CRITICAL_SECTION cs, cs2;
@@ -3968,8 +3967,8 @@ namespace origami_sorter {
 			SetThreadAffinityMask(GetCurrentThread(), 1LLU << coreid);
 		}
 
-		constexpr ui l1_buff_n = MT_L1_BUFF_N;
-		constexpr ui l2_buff_n = MT_L2_BUFF_N;
+		constexpr ui l1_buff_n = MT_L1_BUFF_N;	 
+		constexpr ui l2_buff_n = MT_L2_BUFF_N;		 
 
 		ui M_loc = _M;
 		ui M_pow_loc = (ui)(log2(M_loc));
@@ -4010,8 +4009,8 @@ namespace origami_sorter {
 		ui64 prev_sort_n = Y_loc;
 
 		ui p2_iters = (ui)(log2(P2_N) - log2(P1_N));
-		src = (p2_iters & 1) ? out : d;
-		dst = (p2_iters & 1) ? d : out;
+		src = (p2_iters & 1) ? out : d;	
+		dst = (p2_iters & 1) ? d : out;	
 
 		FOR(i, phase3_iters_loc, 1) {
 			std::queue<ui>* phase3_this_Q = &phase3_Q[i];
@@ -4023,11 +4022,11 @@ namespace origami_sorter {
 			__int64* phase3_curr_job_id_loc = &phase3_curr_job_id[i];
 
 			origami_merge_tree::MergeTree<Reg, Item>* tree = nullptr;
-			if (phase3_way_pow_loc & 1) tree = new origami_merge_tree::MergeTreeOdd<Reg, Item>(phase3_way, interim_buf, l1_buff_n, l2_buff_n);
-			else tree = new origami_merge_tree::MergeTreeEven<Reg, Item>(phase3_way, interim_buf, l1_buff_n, l2_buff_n);
+			if (phase3_way_pow_loc & 1) tree = new origami_merge_tree::MergeTreeOdd<Reg, Item>();
+			else tree = new origami_merge_tree::MergeTreeEven<Reg, Item>();
 
-			//tree->merge_init(phase3_way, interim_buf, l1_buff_n, l2_buff_n);
-
+			tree->merge_init(phase3_way, interim_buf, l1_buff_n, l2_buff_n);
+			
 			while (1) {
 				EnterCriticalSection(&cs);
 				if (phase3_this_Q->size() >= phase3_way) {
@@ -4052,13 +4051,12 @@ namespace origami_sorter {
 					/*EnterCriticalSection(&cs);
 					printf("Th %u %d-way merging %lu keys ... ", t_idx, phase3_way, merged_n);
 					*/
-					//tree->merge(X, endX, pout, merged_n, l1_buff_n, l2_buff_n, interim_buf, phase3_way);
-					tree->merge(X, endX, pout, pout + merged_n);
+ 					tree->merge(X, endX, pout, merged_n, l1_buff_n, l2_buff_n, interim_buf, phase3_way);
 					/*printf("done\n");
 					printf("Checking correctness ... ");
 					printf("done\n");
 					LeaveCriticalSection(&cs);*/
-
+					
 					if (i != phase3_iters_loc - 1) {
 						EnterCriticalSection(&cs);
 						phase3_next_Q->push(curr_job_id);
@@ -4089,7 +4087,7 @@ namespace origami_sorter {
 		// need synchronization at this point
 		EnterSynchronizationBarrier(&barrier, SYNCHRONIZATION_BARRIER_FLAGS_BLOCK_ONLY);
 		//printf("Thread %3lu beginning phase 4\n", t_idx);
-		ui n_partitions_per_thread = n_partitions / n_threads;
+		ui n_partitions_per_thread = n_partitions / n_threads;			
 		const ui partition_idx_base = t_idx * n_partitions_per_thread;
 
 		const ui64 n_per_partition = n_per_thread * n_threads / n_partitions;
@@ -4147,10 +4145,10 @@ namespace origami_sorter {
 
 		// 4.4 Phase 4.4 -> pop and work on jobs
 		origami_merge_tree::MergeTree<Reg, Item>* tree = nullptr;
-		if (M_pow_loc & 1) tree = new origami_merge_tree::MergeTreeOdd<Reg, Item>(M_loc, interim_buf, l1_buff_n, l2_buff_n);
-		else tree = new origami_merge_tree::MergeTreeEven<Reg, Item>(M_loc, interim_buf, l1_buff_n, l2_buff_n);
+		if (M_pow_loc & 1) tree = new origami_merge_tree::MergeTreeOdd<Reg, Item>();
+		else tree = new origami_merge_tree::MergeTreeEven<Reg, Item>();
 
-		//tree->merge_init(M_loc, interim_buf, l1_buff_n, l2_buff_n);
+		tree->merge_init(M_loc, interim_buf, l1_buff_n, l2_buff_n);
 		kway_merge_job<Item>* job = nullptr;
 		while (1) {
 			EnterCriticalSection(&cs2);
@@ -4159,8 +4157,7 @@ namespace origami_sorter {
 				//print_job(job, M_loc);
 				Item* _p = job->out; ui64 _n = job->tot;
 				LeaveCriticalSection(&cs2);
-				//tree->merge(job->X, job->endX, job->out, job->tot, l1_buff_n, l2_buff_n, interim_buf, M_loc);
-				tree->merge(job->X, job->endX, job->out, job->out + job->tot);
+				tree->merge(job->X, job->endX, job->out, job->tot, l1_buff_n, l2_buff_n, interim_buf, M_loc);
 				// DEBUG **********
 				//printf("Sort checker by th: %3lu @ [%llX %llX]\n", t_idx, _p, _p + _n); 
 				//if (!SortCorrectnessChecker(_p, _n)) {
@@ -4188,6 +4185,8 @@ namespace origami_sorter {
 			}
 		}
 		//printf("Thread %3lu, Phase 4.4 done\n", t_idx);
+
+		tree->merge_cleanup();
 		delete tree;
 #endif	// PHASE 
 	}
@@ -4212,7 +4211,7 @@ namespace origami_sorter {
 		ui min_k_pow = log2(min_k);
 		while (phase3_levels > 0) {
 			ui current_way_pow = (phase3_levels - min_k_pow) < min_k_pow ? phase3_levels : min_k_pow;
-			phase3_ways_pow[i] = current_way_pow;
+			phase3_ways_pow[i] = current_way_pow;	
 			phase3_n_jobs[i] = prev_jobs_tot / (1LU << phase3_ways_pow[i]);
 			prev_jobs_tot = phase3_n_jobs[i];
 			i++;
@@ -4233,11 +4232,11 @@ namespace origami_sorter {
 
 		// ---------- partitioining stuff for Phase 4
 		// p[i][j] gives the start ptr of jth stream of partition i;			// x of stream i, end ptr for that would be in p[i][j + 1]
-		p = new void** [n_partitions + 1];
-		p_tmp = new void** [n_threads + 1];
-		pout = new void* [n_partitions + 1];
-		FOR(i, n_partitions + 1, 1) p[i] = new void* [_M];
-		FOR(i, n_threads + 1, 1)	p_tmp[i] = new void* [_M];
+		p = new void **[n_partitions + 1];
+		p_tmp = new void **[n_threads + 1];
+		pout = new void *[n_partitions + 1];
+		FOR(i, n_partitions + 1, 1) p[i] = new void * [_M];
+		FOR(i, n_threads + 1, 1)	p_tmp[i] = new void * [_M];
 		// init pointers
 		// for every pair of sorted lists
 		const ui n_per_stream_last = n_items / _M;
@@ -4246,7 +4245,7 @@ namespace origami_sorter {
 		InitializeCriticalSection(&cs2);
 		InitializeSynchronizationBarrier(&barrier, n_threads, -1);
 
-
+		
 #ifdef PHASE_4
 		Item* p1 = (tot_iters_before_phase4 & 1) ? out : d;
 		FOR(k, _M, 1) {
@@ -4288,7 +4287,7 @@ namespace origami_sorter {
 	}
 
 
-
+	
 
 #undef SCALAR
 #undef PHASE_3

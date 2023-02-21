@@ -93,9 +93,9 @@ namespace avx512_utils {
 		}
 		else if constexpr (std::is_same<Reg, avx2d>::value) {
 			avx2d a0 = _mm512_extractf64x4_pd(a0, 0);
-			printf("%lf ", _mm256_extract_pd(a0, 0)); printf("%lf ", _mm256_extract_pd(a0, 1)); printf("%lf ", _mm256_extract_pd(a0, 2)); printf("%lf ", _mm256_extract_pd(a0, 3));
+			//printf("%lf ", _mm256_extract_pd(a0, 0)); printf("%lf ", _mm256_extract_pd(a0, 1)); printf("%lf ", _mm256_extract_pd(a0, 2)); printf("%lf ", _mm256_extract_pd(a0, 3));
 			a0 = _mm512_extractf64x4_pd(a0, 1);
-			printf("%lf ", _mm256_extract_pd(a0, 0)); printf("%lf ", _mm256_extract_pd(a0, 1)); printf("%lf ", _mm256_extract_pd(a0, 2)); printf("%lf\n", _mm256_extract_pd(a0, 3));
+			//printf("%lf ", _mm256_extract_pd(a0, 0)); printf("%lf ", _mm256_extract_pd(a0, 1)); printf("%lf ", _mm256_extract_pd(a0, 2)); printf("%lf\n", _mm256_extract_pd(a0, 3));
 		}
 	}
 

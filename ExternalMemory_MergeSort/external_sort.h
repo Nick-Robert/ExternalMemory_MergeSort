@@ -71,18 +71,26 @@ class external_sort
     char* full_sorted_fname;
     char* metrics_fname;
 
-    std::queue<Itemtype*> free_blocks;
+    //std::queue<Itemtype*> free_blocks;
     
 
     bool test_sort = false;
     bool give_vals = false;
     bool debug = false;
+    bool seq_run = false;
 
     // mergesort values
     //struct state_vars *state;
-    std::vector<state_vars> state;
+    //std::vector<state_vars> state;
     unsigned long long int mergesort_buffer_size;
     unsigned long long int mem_avail;
+    unsigned long long int merge_mem_avail;
+    //unsigned long long int num_chunks;
+    //unsigned long long int tot_bytes_written;
+    //unsigned long long int out_buf_size;
+    //unsigned long long int in_buf_size;
+    //char* X[MTREE_MAX_WAY + 1], * endX[MTREE_MAX_WAY + 1];
+    //HANDLE fp[MTREE_MAX_WAY + 1];
 
     unsigned long bytes_per_sector;
 
@@ -117,13 +125,11 @@ public:
     // constructor
     external_sort(unsigned long long int _FILE_SIZE, unsigned long long int _MEM_SIZE, char _fname[], char _chunk_sorted_fname[], char _full_sorted_fname[], char _metrics_fname[], int _num_runs = 1, bool _TEST_SORT = false, bool _GIVE_VALS = false, bool _DEBUG = false);
 
-    //~external_sort();
-
     int write_file();
 
     int sort_file();
 
-    uint64_t populate_blocks(unsigned idx, unsigned long long *remaining_vals, Itemtype* rbuff);
+    void init_buffers(char* buf);
 
     int merge_sort();
 
@@ -137,5 +143,10 @@ public:
 
     int deep_validate();
 };
+
+void process_buffer(int stream_idx, char** _p, char** _endp);
+
+uint64_t populate_blocks(unsigned idx, unsigned long long* remaining_vals, HANDLE* f);
+
 
 #endif

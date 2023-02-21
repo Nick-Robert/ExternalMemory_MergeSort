@@ -95,31 +95,30 @@ external_sort::external_sort(unsigned long long int _FILE_SIZE, unsigned long lo
     printf("    There is currently %llu KB of free memory available\n", statex.ullAvailPhys / 1024);
     unsigned long long mem_avail = 0.7 * statex.ullAvailPhys;
     // divided by 2 since Origami is an out-of-place sorter
-    mem_avail = ((mem_avail + 511) & (~511)) / 2;
+    mem_avail = ((mem_avail + 511) & (~511));
     mem_avail = 1LLU << (unsigned)log2(mem_avail);
-    mem_avail = 1LLU << 20;
-    this->mem_avail = mem_avail;
-    printf("        External sort will use %llu B (%llu vals) of memory\n", mem_avail, mem_avail / sizeof(Itemtype));
-    assert(mem_avail % sizeof(Itemtype) == 0);
-    this->chunk_size = mem_avail / sizeof(Itemtype);
+    mem_avail = 1LLU << 30;
+
+    this->merge_mem_avail = mem_avail;
+    this->mem_avail = mem_avail / 2;
+    printf("        External sort will use %llu B (%llu vals) of memory\n", merge_mem_avail, merge_mem_avail / sizeof(Itemtype));
+    assert(merge_mem_avail % sizeof(Itemtype) == 0);
+    this->chunk_size = mem_avail / (2 * sizeof(Itemtype));
 
     BOOL succeeded = GetDiskFreeSpaceA(NULL, NULL, &this->bytes_per_sector, NULL, NULL);
     if (!succeeded) {
         printf("%s: Failed getting disk information with %d\n", __FUNCTION__, GetLastError());
     }
+    if (this->fname == this->chunk_sorted_fname) {
+        this->seq_run = true;
+    }
 }
-
-//external_sort::~external_sort() 
-//{
-//    //delete[] this->state;
-//}
-
 
 int external_sort::write_file()
 {
     printf("\n%s\n", __FUNCTION__);
-    srand((unsigned int)time(0));
-    //srand(0);
+    //srand((unsigned int)time(0));
+    srand(0);
     LARGE_INTEGER start = { 0 }, end = { 0 }, freq = { 0 };
 
     QueryPerformanceFrequency(&freq);
@@ -129,8 +128,25 @@ int external_sort::write_file()
 
     Itemtype* wbuffer = (Itemtype*)_aligned_malloc(static_cast<size_t>(this->write_buffer_size) * sizeof(Itemtype), this->bytes_per_sector);
     double generation_duration = 0, write_duration = 0;
+    HANDLE pfile = nullptr;
 
-    HANDLE pfile = CreateFile(this->fname, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
+    if (this->seq_run) {
+        pfile = CreateFile(this->fname, GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
+            NULL,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING,
+            NULL);
+    }
+    else {
+        pfile = CreateFile(this->fname, GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
+            NULL,
+            CREATE_ALWAYS,
+            FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING,
+            NULL);
+    }
+    
     if (pfile == INVALID_HANDLE_VALUE) {
         printf("__FUNCTION__write_file(): Failed opening file with %d\n", GetLastError());
         exit(1);
@@ -240,10 +256,10 @@ int external_sort::write_file()
         printf("%s: Error with SetFilePointer with %d\n", __FUNCTION__, GetLastError());
         exit(1);
     }
-    if (!SetEndOfFile(pfile)) {
+    /*if (!SetEndOfFile(pfile)) {
         printf("%s: Error with SetEndOfFile with %d\n", __FUNCTION__, GetLastError());
         exit(1);
-    }
+    }*/
     CloseHandle(pfile);
     this->windows_fs.QuadPart = before_sfp.QuadPart;
 
@@ -293,19 +309,46 @@ int external_sort::sort_file()
     double sort_duration = 0, read_duration = 0;
 
     QueryPerformanceFrequency(&freq);
+    HANDLE old_file = nullptr, chunk_sorted_file = nullptr;
+    
+    if (this->seq_run)
+    {
+        old_file = CreateFile(this->fname, GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
+            NULL,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING,
+            NULL);
+        chunk_sorted_file = CreateFile(this->chunk_sorted_fname, GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
+            NULL,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING,
+            NULL);
+        if (old_file == INVALID_HANDLE_VALUE) {
+            printf("%s: Failed opening populated file with %d\n", __FUNCTION__, GetLastError());
+            exit(1);
+        }
+        else if (chunk_sorted_file == INVALID_HANDLE_VALUE) {
+            printf("%s: Failed opening new file for sort output with %d\n", __FUNCTION__, GetLastError());
+            exit(1);
+        }
+        DWORD num_moved = 0;
+        num_moved = SetFilePointer(chunk_sorted_file, this->windows_fs.LowPart, &this->windows_fs.HighPart, FILE_BEGIN);
+        if (num_moved == INVALID_SET_FILE_POINTER) {
+            printf("%s: Line ~321 error in SetFilePointer with %d\n", __FUNCTION__, GetLastError());
+            exit(1);
+        }
+    }
+    else {
+        printf("Need to fix this\n");
+        exit(1);
+    }
 
-    HANDLE old_file = CreateFile(this->fname, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
-    HANDLE chunk_sorted_file = CreateFile(this->chunk_sorted_fname, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
-    if (old_file == INVALID_HANDLE_VALUE) {
-        printf("%s: Failed opening populated file with %d\n", __FUNCTION__, GetLastError());
-        exit(1);
-    }
-    else if (chunk_sorted_file == INVALID_HANDLE_VALUE) {
-        printf("%s: Failed opening new file for sort output with %d\n", __FUNCTION__, GetLastError());
-        exit(1);
-    }
+    
     Itemtype* sort_buffer = (Itemtype*)_aligned_malloc(static_cast<size_t>(oos_size) * sizeof(Itemtype), this->bytes_per_sector);
-    while (number_read < this->file_size) {
+    while (number_read < this->file_size) 
+    {
         if (this->debug) {
             printf("number_read = %lu\n", number_read);
         }
@@ -350,14 +393,6 @@ int external_sort::sort_file()
         Itemtype* sort_buffer_end = sort_buffer + num_vals_to_read;
         Itemtype* output = (Itemtype*)_aligned_malloc(static_cast<size_t>(oos_size) * sizeof(Itemtype), this->bytes_per_sector);
         Itemtype* o = sort_buffer;
-        //Itemtype* o = sort_buffer;
-        /*printf("    num_vals_to_read = %lu\n", num_vals_to_read);
-        printf("    sort_buffer = %llu\n", sort_buffer);
-        printf("    o = %llu\n", o);
-        printf("    sort_buffer_end = %llu\n", sort_buffer_end);*/
-        //printf("        num_vals_to_read = %lu\n", num_vals_to_read);
-        /*printf("        this->chunk_size = %lu\n", this->chunk_size);
-        printf("        sizeof(Itemtype) = %lu\n", sizeof(Itemtype));*/
 
         if (num_vals_to_read < (1LLU << 20) / sizeof(Itemtype)) {
             //printf("    quicksort\n");
@@ -406,7 +441,8 @@ int external_sort::sort_file()
         }*/
         sort_duration += end.QuadPart - start.QuadPart;
         unsigned long long loop_written = 0;
-        while (written < number_read) {
+        while (written < number_read) 
+        {
             if (this->debug) {
                 printf("    written = %lu\n", written);
                 printf("    number_read = %lu\n", number_read);
@@ -430,17 +466,6 @@ int external_sort::sort_file()
                 num_vals_to_write = this->write_buffer_size;
                 new_num_vals_to_write = this->write_buffer_size;
             }
-            /*printf("    num_vals_to_write = %lu\n", num_vals_to_write);
-            printf("    new_num_vals_to_write = %lu\n", new_num_vals_to_write);
-            printf("        *(sort_buffer + written) = %u\n", *(sort_buffer + (unsigned int)written));
-            printf("        *(sort_buffer) = %u\n", *(sort_buffer));
-            printf("        *(sort_buffer + 1) = %u\n", *(sort_buffer + 1));
-            printf("        buffer[0] = %u\n", sort_buffer[0]);
-            printf("            sort_buffer = %llu\n", sort_buffer);
-            printf("            sort_buffer + written = %llu\n", sort_buffer + written);
-            printf("            &buffer[0] = %llu\n", &sort_buffer[0]);
-            printf("            &buffer[1] = %llu\n", &sort_buffer[1]);
-            printf("            &buffer[1] - &buffer[0] = %llu\n", &sort_buffer[1] - &sort_buffer[0]);*/
 
             DWORD num_bytes_touched;
             bool was_success = WriteFile(chunk_sorted_file, o + loop_written, sizeof(Itemtype) * new_num_vals_to_write, &num_bytes_touched, NULL);
@@ -448,24 +473,28 @@ int external_sort::sort_file()
                 printf("%s: Failed writing to new file for sort output with %d\n", __FUNCTION__, GetLastError());
                 exit(1);
             }
-            /*printf("buffer[%d] = %llu\n", loop_written, o[loop_written]);
-            printf("    num_bytes_touched in write = %d\n", num_bytes_touched);*/
 
             if (num_vals_to_write != new_num_vals_to_write) {
+                // this is likely incorrect and also in the wrong spot in this function
+                // the new chunk_sorted_file handle would need the NO_BUFFERING flag as well after this. The chunk sizes must be still multiples of 512
+                printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
                 CloseHandle(chunk_sorted_file);
-                chunk_sorted_file = CreateFile(this->chunk_sorted_fname, GENERIC_WRITE, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-                //LARGE_INTEGER before_sfp = { 0 };
-                //before_sfp.QuadPart = this->windows_fs.QuadPart;
+                chunk_sorted_file = CreateFile(this->chunk_sorted_fname, GENERIC_READ | GENERIC_WRITE,
+                    FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
+                    NULL,
+                    OPEN_EXISTING,
+                    FILE_ATTRIBUTE_NORMAL,
+                    NULL);
                 DWORD num_moved = 0;
-                num_moved = SetFilePointer(chunk_sorted_file, this->windows_fs.LowPart, NULL/*&this->windows_fs.HighPart*/, FILE_BEGIN);
+                num_moved = SetFilePointer(chunk_sorted_file, this->windows_fs.LowPart, NULL/* & this->windows_fs.HighPart*/, FILE_BEGIN);
                 if (num_moved == INVALID_SET_FILE_POINTER) {
                     printf("%s: error in SetFilePointer with %d\n", __FUNCTION__, GetLastError());
                     exit(1);
                 }
-                if (!SetEndOfFile(chunk_sorted_file)) {
+                /*if (!SetEndOfFile(chunk_sorted_file)) {
                     printf("%s: error in SetEndOfFile with %d\n", __FUNCTION__, GetLastError());
                     exit(1);
-                }
+                }*/
                 //windows_fs.QuadPart = before_sfp.QuadPart;
             }
 
@@ -565,15 +594,47 @@ int external_sort::merge_sort()
         printf("    chunk_size / num_chunks = %llu\n", this->chunk_size / num_chunks);
         printf("    chunk_size = %llu\n", this->chunk_size);
     }
-
-    HANDLE chunk_sorted_file = CreateFile(this->chunk_sorted_fname, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
-    HANDLE full_sorted_file = CreateFile(this->full_sorted_fname, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
-    if (chunk_sorted_file == INVALID_HANDLE_VALUE) {
-        printf("%s: Failed opening populated file with %d\n", __FUNCTION__, GetLastError());
-        exit(1);
+    HANDLE chunk_sorted_file = nullptr, full_sorted_file = nullptr;
+    
+    LARGE_INTEGER new_fp = { 0 };
+    new_fp.QuadPart = 2 * this->windows_fs.QuadPart;
+    if (this->seq_run)
+    {
+        chunk_sorted_file = CreateFile(this->chunk_sorted_fname, GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
+            NULL,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING,
+            NULL);
+        full_sorted_file = CreateFile(this->full_sorted_fname, GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
+            NULL,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING,
+            NULL);
+        if (chunk_sorted_file == INVALID_HANDLE_VALUE) {
+            printf("%s: Failed opening populated file with %d\n", __FUNCTION__, GetLastError());
+            exit(1);
+        }
+        else if (full_sorted_file == INVALID_HANDLE_VALUE) {
+            printf("%s: Failed opening new file for mergesort output with %d\n", __FUNCTION__, GetLastError());
+            exit(1);
+        }
+        DWORD num_moved = 0;
+        num_moved = SetFilePointer(chunk_sorted_file, this->windows_fs.LowPart, &this->windows_fs.HighPart, FILE_BEGIN);
+        if (num_moved == INVALID_SET_FILE_POINTER) {
+            printf("%s: error in SetFilePointer for chunk sorted with %d\n", __FUNCTION__, GetLastError());
+            exit(1);
+        }
+        
+        num_moved = SetFilePointer(full_sorted_file, new_fp.LowPart, &new_fp.HighPart, FILE_BEGIN);
+        if (num_moved == INVALID_SET_FILE_POINTER) {
+            printf("%s: error in SetFilePointer for full sorted with %d\n", __FUNCTION__, GetLastError());
+            exit(1);
+        }
     }
-    else if (full_sorted_file == INVALID_HANDLE_VALUE) {
-        printf("%s: Failed opening new file for mergesort output with %d\n", __FUNCTION__, GetLastError());
+    else {
+        printf("Need to fix this\n");
         exit(1);
     }
 
@@ -582,7 +643,7 @@ int external_sort::merge_sort()
 
     unsigned long long delta = 0;
     unsigned long long largest_chunk = 0;
-    delta = (2 * (this->mem_avail / sizeof(Itemtype)) / (num_chunks * (num_chunks + 1)));
+    delta = (2 * (this->merge_mem_avail / sizeof(Itemtype)) / (num_chunks * (num_chunks + 1)));
     largest_chunk = num_chunks * delta;
 
     printf("    Number of chunks  = %llu\n", num_chunks);
@@ -617,17 +678,32 @@ int external_sort::merge_sort()
         // what is the current block number
         new_chunk.curr_block = 1;
 
-        // start of the whole chunk in the file
-        new_chunk.start_offset = running_file_offset * sizeof(Itemtype);
 
-        // end of the whole chunk in the file (equivalent to the start of the next chunk, if it exists)
-        new_chunk.end_offset = (running_file_offset + new_chunk.chunk_size) * sizeof(Itemtype);
 
-        // how big a portion this chunk gets in memory (not necessarilly contiguous)
-        new_chunk.bufsize = (std::min)((INT64)(delta * (static_cast<unsigned long long>(i) + 1)), (INT64)((new_chunk.end_offset - new_chunk.start_offset) / sizeof(Itemtype)));
-        // next place in the file to start the next seek from the start_offset
-        new_chunk.seek_offset = (std::min)(new_chunk.bufsize * sizeof(Itemtype), new_chunk.end_offset - new_chunk.start_offset);
+        // if it's in a large sequential file, need to set the offsets properly within the space
+        if (!this->seq_run)
+        {
+            // start of the whole chunk in the file
+            new_chunk.start_offset = running_file_offset * sizeof(Itemtype);
+            // end of the whole chunk in the file (equivalent to the start of the next chunk, if it exists)
+            new_chunk.end_offset = (running_file_offset + new_chunk.chunk_size) * sizeof(Itemtype);
+            // how big a portion this chunk gets in memory (not necessarilly contiguous)
+            new_chunk.bufsize = (std::min)((INT64)(delta * (static_cast<unsigned long long>(i) + 1)), (INT64)((new_chunk.end_offset - new_chunk.start_offset) / sizeof(Itemtype)));
+            // next place in the file to start the next seek from the start_offset
+            new_chunk.seek_offset = (std::min)(new_chunk.bufsize * sizeof(Itemtype), new_chunk.end_offset - new_chunk.start_offset);
+        }
+        else {
+            // start of the whole chunk in the file
+            new_chunk.start_offset = this->windows_fs.QuadPart + running_file_offset * sizeof(Itemtype);
+            // end of the whole chunk in the file (equivalent to the start of the next chunk, if it exists)
+            new_chunk.end_offset = this->windows_fs.QuadPart + (running_file_offset + new_chunk.chunk_size) * sizeof(Itemtype);
+            // how big a portion this chunk gets in memory (not necessarilly contiguous)
+            new_chunk.bufsize = (std::min)((INT64)(delta * (static_cast<unsigned long long>(i) + 1)), (INT64)((new_chunk.end_offset - new_chunk.start_offset) / sizeof(Itemtype)));
+            // next place in the file to start the next seek from the start_offset
+            new_chunk.seek_offset = /*this->windows_fs.QuadPart + */(std::min)(new_chunk.bufsize * sizeof(Itemtype), new_chunk.end_offset - new_chunk.start_offset);
+        }
 
+        
         new_chunk.nobuff_bufsize = (static_cast<INT64>(new_chunk.bufsize) + 127) & (~127);
 
         // each chunk's portion of the memory is made out of blocks, which are 1 MB sizes of memory linked together in a queue
@@ -677,35 +753,23 @@ int external_sort::merge_sort()
         }
         QueryPerformanceCounter(&start);
         unsigned long long tot_bytes = sizeof(Itemtype) * this->state[i].nobuff_bufsize;
-        DWORD num_bytes_touched = read_into_buffer(&chunk_sorted_file, rbuff, tot_bytes);
+        //printf("tot_bytes = %llu\n", tot_bytes);
+
+        read_into_buffer(&chunk_sorted_file, rbuff, tot_bytes);
         QueryPerformanceCounter(&end);
         load_duration += end.QuadPart - start.QuadPart;
 
         QueryPerformanceCounter(&start);
 
         if (this->debug) {
-            printf("    num_bytes_touched = %llu\n", num_bytes_touched);
+            //printf("    num_bytes_touched = %llu\n", num_bytes_touched);
             printf("    num_moved = %lu\n\n", num_moved);
         }
 
-        unsigned long long remaining_vals = (std::min)(this->state[i].bufsize, num_bytes_touched / sizeof(Itemtype));
+        unsigned long long remaining_vals = (std::min)(this->state[i].bufsize, tot_bytes / sizeof(Itemtype));
+        //printf("remaining_vals = %llu\n", remaining_vals);
         this->state[i].num_vals_last_block = populate_blocks(i, &remaining_vals, rbuff);
-        //for (int j = 0; j < this->state[i].num_blocks; j++) {
-        //    unsigned long long vals_to_copy = (std::min)(remaining_vals, this->block_size / sizeof(Itemtype));
-        //    
-        //    if (j == this->state[i].num_blocks - 1)
-        //    {
-        //        this->state[i].num_vals_last_block = vals_to_copy;
-        //    }
 
-        //    //Itemtype* temp = (Itemtype*)_aligned_malloc(this->block_size, this->bytes_per_sector);
-        //    Itemtype* temp = this->free_blocks.front();
-        //    this->free_blocks.pop();
-        //    memcpy(temp, rbuff + buf_offset, vals_to_copy * sizeof(Itemtype));
-        //    this->state[i].bq.push(temp);
-        //    buf_offset += vals_to_copy;
-        //    remaining_vals -= vals_to_copy;
-        //}
 
         if (this->debug) {
             printf("    rbuff[0] = %llu\n", rbuff[0]);
@@ -763,6 +827,8 @@ int external_sort::merge_sort()
     unsigned long long sorted_buf_size = 0;
     unsigned long long tot_num_vals = 0;
     unsigned long long num_refills = 0;
+    unsigned last_last_branch = -1;
+    unsigned last_branch = -1;
     Itemtype last_val = 0;
     QueryPerformanceCounter(&merge_start);
     while (mh.size()) {
@@ -790,15 +856,20 @@ int external_sort::merge_sort()
             printf("   tot_num_vals (vals taken out of minheap) = %llu\n", tot_num_vals);
             printf("   fs - tot_num_vals = %lld\n", this->file_size - tot_num_vals);
             printf("    mh.size() = %u\n", mh.size());
+            printf("    last_last_branch = %u\n", last_last_branch);
+            printf("    last_branch = %u\n", last_branch);
+            printf("    num_refills = %u\n", num_refills);
             printf("    this->write_buffer_size = %u\n", this->write_buffer_size);
             printf("    sv->curr_buflen = %u\n", sv->curr_buflen);
             printf("    sv->bufsize = %u\n", sv->bufsize);
             printf("    sv->num_vals_last_block = %u\n", sv->num_vals_last_block);
             printf("    sv->(this->block_size / sizeof(Itemtype)) - 1 = %u\n", (this->block_size / sizeof(Itemtype)) - 1);
             printf("    sv->curr_block = %u\n", sv->curr_block);
+            printf("    sv->num_blocks = %u\n", sv->num_blocks);
             printf("        root.chunk_index = %u\n", root.chunk_index);
             printf("        sv->bq.front()[127] = %u\n", sv->bq.front()[127]);
             printf("        sv->bq.front()[128] = %u\n", sv->bq.front()[128]);
+            printf("        sv->bq.front()[129] = %u\n", sv->bq.front()[129]);
 
             exit(1);
         }
@@ -820,6 +891,8 @@ int external_sort::merge_sort()
             // no more values to give
             if (sv->curr_buflen >= sv->num_vals_last_block)
             {
+                last_last_branch = last_branch;
+                last_branch = 1;
                 num_refills++;
                 this->free_blocks.push(sv->bq.front());
                 sv->bq.pop();
@@ -882,15 +955,15 @@ int external_sort::merge_sort()
                     if (this->debug) {
                         printf("    num_moved = %lu\n", num_moved);
                     }
-
-                    bool was_success = ReadFile(chunk_sorted_file, rbuff, new_bytes_to_read, &num_bytes_touched, NULL);
+                    read_into_buffer(&chunk_sorted_file, rbuff, new_bytes_to_read);
+                    //bool was_success = ReadFile(chunk_sorted_file, rbuff, new_bytes_to_read, &num_bytes_touched, NULL);
                     QueryPerformanceCounter(&end);
                     read_duration += end.QuadPart - start.QuadPart;
 
-                    if (!(was_success)) {
+                    /*if (!(was_success)) {
                         printf("%s: Failed reading from populated file with %d\n", __FUNCTION__, GetLastError());
                         exit(1);
-                    }
+                    }*/
                     if (this->debug) {
                         printf("    rbuff[%d] = %llu\n", (unsigned long long)(num_bytes_to_move.QuadPart - aligned_bytes_to_move.QuadPart) / sizeof(Itemtype), rbuff[(unsigned long long)(num_bytes_to_move.QuadPart - aligned_bytes_to_move.QuadPart) / sizeof(Itemtype)]);
                         printf("    (unsigned long long)(num_bytes_to_move.QuadPart - aligned_bytes_to_move.QuadPart) / sizeof(Itemtype) = %llu\n", (unsigned long long)(num_bytes_to_move.QuadPart - aligned_bytes_to_move.QuadPart) / sizeof(Itemtype));
@@ -901,30 +974,6 @@ int external_sort::merge_sort()
                     sv->num_blocks = (bytes_to_read % (this->block_size) == 0) ? (bytes_to_read / (this->block_size)) : (bytes_to_read / (this->block_size) + 1);
 
                     sv->num_vals_last_block = populate_blocks(root.chunk_index, &remaining_vals, rbuff + (unsigned long long)(num_bytes_to_move.QuadPart - aligned_bytes_to_move.QuadPart) / sizeof(Itemtype));
-
-                    //for (int j = 0; j < sv->num_blocks; j++) {
-                    //    unsigned long long vals_to_copy = (std::min)(remaining_vals, this->block_size / sizeof(Itemtype));
-                    //    
-                    //    if (j == sv->num_blocks - 1)
-                    //    {
-                    //        sv->num_vals_last_block = vals_to_copy;
-                    //    }
-                    //    
-                    //    if (this->free_blocks.size() == 0)
-                    //    {
-                    //        //printf("    free block queue is 0 with num_blocks = %u and j = %u\n", sv->num_blocks, j);
-                    //        Itemtype* temp = (Itemtype*)_aligned_malloc(this->block_size, this->bytes_per_sector);
-                    //        this->free_blocks.push(temp);
-                    //    }
-
-                    //    Itemtype* temp = this->free_blocks.front();
-                    //    this->free_blocks.pop();
-                    //    memcpy(temp, rbuff + (unsigned long long)(num_bytes_to_move.QuadPart - aligned_bytes_to_move.QuadPart) / sizeof(Itemtype) + buf_offset, vals_to_copy * sizeof(Itemtype));
-                    //    sv->bq.push(temp);
-
-                    //    buf_offset += vals_to_copy;
-                    //    remaining_vals -= vals_to_copy;
-                    //}
 
                     _aligned_free(rbuff);
                     sv->seek_offset += bytes_to_read;
@@ -957,6 +1006,8 @@ int external_sort::merge_sort()
             }
             else
             {
+                last_last_branch = last_branch;
+                last_branch = 2;
                 root.val = sv->bq.front()[sv->curr_buflen];
                 QueryPerformanceCounter(&start);
                 mh.push(root);
@@ -970,7 +1021,9 @@ int external_sort::merge_sort()
             // has more values to give
             if (sv->curr_buflen < (this->block_size / sizeof(Itemtype)))
             {
-                assert(sv->curr_buflen != this->block_size - 1);
+                last_last_branch = last_branch;
+                last_branch = 3;
+                //assert(sv->curr_buflen != this->block_size - 1);
                 root.val = sv->bq.front()[sv->curr_buflen];
                 QueryPerformanceCounter(&start);
                 mh.push(root);
@@ -979,11 +1032,13 @@ int external_sort::merge_sort()
             }
             else
             {
+                last_last_branch = last_branch;
+                last_branch = 4;
                 this->free_blocks.push(sv->bq.front());
                 sv->bq.pop();
                 sv->curr_block++;
                 sv->curr_buflen = 0;
-                assert(sv->bq.empty() == 0);
+                //assert(sv->bq.empty() == 0);
                 root.val = sv->bq.front()[sv->curr_buflen];
                 QueryPerformanceCounter(&start);
                 mh.push(root);
@@ -996,8 +1051,13 @@ int external_sort::merge_sort()
     QueryPerformanceCounter(&merge_end);
     merge_duration += merge_end.QuadPart - merge_start.QuadPart;
     merge_duration = merge_duration - read_duration - heap_duration - write_duration;
-
+    if (tot_num_vals != this->file_size)
+    {
+        printf("%s: Problem in merge, %llu vals expected but only %llu vals seen\n", __FUNCTION__, this->file_size, tot_num_vals);
+        exit(1);
+    }
     if (sorted_buf_size) {
+        printf("Some leftover values to be written\n");
         unsigned ns = (sorted_buf_size + 127) & (~127);
         if (this->debug) {
             printf("    sorted_buf_size = %u\n", sorted_buf_size);
@@ -1014,20 +1074,25 @@ int external_sort::merge_sort()
         if (!CloseHandle(full_sorted_file)) {
             printf("%s: failed to close handle with no buffering with %d\n", __FUNCTION__, GetLastError());
         }
-        full_sorted_file = CreateFile(this->full_sorted_fname, GENERIC_WRITE, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        full_sorted_file = CreateFile(this->full_sorted_fname, GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
+            NULL,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL,
+            NULL);
         //printf(" this->file_size * sizeof(Itemtype) = %llu\n", this->file_size * sizeof(Itemtype));
         LARGE_INTEGER dist = { 0 };
-        dist.QuadPart = this->file_size * sizeof(Itemtype);
+        dist.QuadPart = 2 * this->file_size * sizeof(Itemtype);
         if ((SetFilePointer(full_sorted_file, dist.LowPart, &dist.HighPart, FILE_BEGIN)) == INVALID_SET_FILE_POINTER) {
             printf("%s: Failed setting file pointer to truncate merged file with %d\n", __FUNCTION__, GetLastError());
             exit(1);
         }
         this->num_seeks++;
 
-        if (!SetEndOfFile(full_sorted_file)) {
+        /*if (!SetEndOfFile(full_sorted_file)) {
             printf("%s: Failed setting end of file to truncate merged file with %d\n", __FUNCTION__, GetLastError());
             exit(1);
-        }
+        }*/
         QueryPerformanceCounter(&end);
 
         write_duration += end.QuadPart - start.QuadPart;
@@ -1053,6 +1118,7 @@ int external_sort::merge_sort()
     this->heap_duration = heap_duration / freq.QuadPart;
     this->merge_write_duration = write_duration / freq.QuadPart;
     printf("num_seeks = %d\n", this->num_seeks);
+    printf("num_refills = %llu\n", num_refills);
     _aligned_free(sorted_num_buffer);
     return 0;
 }
@@ -1191,9 +1257,24 @@ int external_sort::shallow_validate()
     double sort_duration = 0, read_duration = 0;
 
 
-    HANDLE file = CreateFile(this->full_sorted_fname, GENERIC_READ, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
-    HANDLE cfile = CreateFile(this->chunk_sorted_fname, GENERIC_READ, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    HANDLE rfile = CreateFile(this->fname, GENERIC_READ, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE file = CreateFile(this->full_sorted_fname, GENERIC_READ | GENERIC_WRITE,
+        FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
+        NULL,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,
+        NULL);
+    HANDLE cfile = CreateFile(this->chunk_sorted_fname, GENERIC_READ | GENERIC_WRITE,
+        FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
+        NULL,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,
+        NULL);
+    HANDLE rfile = CreateFile(this->fname, GENERIC_READ | GENERIC_WRITE,
+        FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
+        NULL,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,
+        NULL);
 
     if (file == INVALID_HANDLE_VALUE) {
         printf("%s: Failed opening merged file with %d\n", __FUNCTION__, GetLastError());
@@ -1321,9 +1402,24 @@ int external_sort::deep_validate()
     double sort_duration = 0, read_duration = 0;
 
 
-    HANDLE foriginal = CreateFile(this->fname, GENERIC_READ, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
-    HANDLE fchunk_sorted = CreateFile(this->chunk_sorted_fname, GENERIC_READ, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
-    HANDLE fmerge_sorted = CreateFile(this->full_sorted_fname, GENERIC_READ, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
+    HANDLE foriginal = CreateFile(this->fname, GENERIC_READ | GENERIC_WRITE,
+        FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
+        NULL,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING,
+        NULL);
+    HANDLE fchunk_sorted = CreateFile(this->chunk_sorted_fname, GENERIC_READ | GENERIC_WRITE,
+        FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
+        NULL,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING,
+        NULL);
+    HANDLE fmerge_sorted = CreateFile(this->full_sorted_fname, GENERIC_READ | GENERIC_WRITE,
+        FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
+        NULL,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING,
+        NULL);
 
 
     if (foriginal == INVALID_HANDLE_VALUE) {
@@ -1337,6 +1433,22 @@ int external_sort::deep_validate()
     if (fmerge_sorted == INVALID_HANDLE_VALUE) {
         printf("%s: Failed opening new file fmerge_sorted for sort output with %d\n", __FUNCTION__, GetLastError());
         exit(1);
+    }
+    LARGE_INTEGER new_fp = { 0 };
+    new_fp.QuadPart = 2 * this->windows_fs.QuadPart;
+    if (this->seq_run) {
+        DWORD num_moved = 0;
+        num_moved = SetFilePointer(fchunk_sorted, this->windows_fs.LowPart, &this->windows_fs.HighPart, FILE_BEGIN);
+        if (num_moved == INVALID_SET_FILE_POINTER) {
+            printf("%s: error in SetFilePointer for chunk sorted with %d\n", __FUNCTION__, GetLastError());
+            exit(1);
+        }
+        
+        num_moved = SetFilePointer(fmerge_sorted, new_fp.LowPart, &new_fp.HighPart, FILE_BEGIN);
+        if (num_moved == INVALID_SET_FILE_POINTER) {
+            printf("%s: error in SetFilePointer for full sorted with %d\n", __FUNCTION__, GetLastError());
+            exit(1);
+        }
     }
 
 

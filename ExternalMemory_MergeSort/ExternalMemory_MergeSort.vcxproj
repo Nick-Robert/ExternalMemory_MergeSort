@@ -127,6 +127,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="bench_external_sort.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="driver.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
@@ -146,6 +149,9 @@
     <ClCompile Include="v5_es.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="v6_es.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <None Include="oldv3_es.cpp">
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </DeploymentContent>
@@ -159,13 +165,16 @@
     <ClInclude Include="config.h" />
     <ClInclude Include="external_sort.h" />
     <ClInclude Include="external_sorter.h" />
+    <ClInclude Include="merge_tree.h" />
+    <ClInclude Include="old_external_sorter.h" />
     <ClInclude Include="merger.h" />
     <ClInclude Include="merge_networks.h" />
-    <ClInclude Include="merge_tree.h" />
+    <ClInclude Include="old_merge_tree.h" />
     <ClInclude Include="merge_utils.h" />
     <ClInclude Include="MinHeap.h" />
     <ClInclude Include="Partition.h" />
     <ClInclude Include="scalar_utils.h" />
+    <ClInclude Include="old_sorter.h" />
     <ClInclude Include="sorter.h" />
     <ClInclude Include="sse_utils.h" />
     <ClInclude Include="utils.h" />

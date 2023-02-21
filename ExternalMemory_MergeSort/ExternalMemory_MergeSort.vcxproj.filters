@@ -36,6 +36,12 @@
     <ClCompile Include="v5_es.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="v6_es.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="bench_external_sort.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MinHeap.h">
@@ -59,7 +65,7 @@
     <ClInclude Include="merge_networks.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="merge_tree.h">
+    <ClInclude Include="old_merge_tree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="merge_utils.h">
@@ -74,7 +80,7 @@
     <ClInclude Include="scalar_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="sorter.h">
+    <ClInclude Include="old_sorter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="sse_utils.h">
@@ -84,6 +90,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="writer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="old_external_sorter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sorter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="merge_tree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="external_sorter.h">
