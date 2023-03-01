@@ -37,6 +37,7 @@ int main(int argc, char** argv)
     char chunk_sorted_fname[] = "D:\\output_files\\sorted_test.bin";
     char full_sorted_fname[] = "D:\\output_files\\merge_test.bin";
     char metric_file_fname[] = "D:\\output_files\\BENCH_origami_external_6TB.csv";
+    //char metric_file_fname[] = "D:\\output_files\\BENCH_origami_internal_sort_4_way.csv";
     //char metric_file_fname[] = "D:\\output_files\\BENCH_minheap_external_6TB.csv";
     /*char fname[] = "output_files\\test.bin";
     char chunk_sorted_fname[] = "output_files\\sorted_test.bin";
@@ -121,7 +122,7 @@ int main(int argc, char** argv)
     fs_start = fs_max;
     //fs_start = 2 * (static_cast<unsigned long long>(1) << 30) / sizeof(Itemtype);                                  // 1 GB
     fs_start = (1LLU << 20) / sizeof(Itemtype);
-    fs_start = 512 / sizeof(Itemtype);
+    //fs_start = 2048 / sizeof(Itemtype);
     //268435456
     fs_start = 268435456 * 2LLU;
     //fs_start = 524288;
