@@ -306,6 +306,7 @@ unsigned long read_into_buffer(HANDLE* fp, Itemtype* buf, unsigned long long tot
 int num_chunks;
 HANDLE fp[MTREE_MAX_WAY + 1];
 ui64 bytes_left[MTREE_MAX_WAY + 1];
+bool str_inits[MTREE_MAX_WAY + 1];
 char* X[MTREE_MAX_WAY + 1], * endX[MTREE_MAX_WAY + 1];
 //ui64 in_buf_size, out_buf_size;
 ui64 tot_bytes_written;
@@ -319,6 +320,8 @@ std::queue<Itemtype*> free_blocks;
 bool two_real_chunks = false;
 ui64 mem_block_size;
 unsigned int glb_bytes_per_sector;
+ui64 chunk_size;
+ui64 file_size;
 
 int external_sort::sort_file()
 {
@@ -583,7 +586,7 @@ uint64_t populate_blocks(unsigned idx, unsigned long long remaining_vals, HANDLE
         unsigned long long padded_vals_to_copy = vals_to_copy;
         if (j == state[idx].num_blocks - 1)
         {
-            padded_vals_to_copy += (sizeof(Regtype) / sizeof(Itemtype) - (vals_to_copy % (sizeof(Regtype) / sizeof(Itemtype) )));
+            padded_vals_to_copy += (sizeof(Regtype) / sizeof(Itemtype) - (vals_to_copy % (sizeof(Regtype) / sizeof(Itemtype))));
             num_vals_last_block = padded_vals_to_copy;
             printf("                state[%d].num_vals_last_block  = %llu\n", idx, num_vals_last_block);
         }
@@ -646,8 +649,9 @@ void process_buffer(int stream_idx, char** _p, char** _endp) {
             Itemtype last_val = *((Itemtype*)output);
             for (int i = 0; i < bytes / sizeof(Itemtype); i++) {
                 if (*((Itemtype*)output + i) < last_val) {
-                    printf("%s: Output buffer out of order: %u > %u at i = %d (i_max = %llu) \n", __FUNCTION__, *((Itemtype*)output + i), last_val, i, bytes / sizeof(Itemtype));
+                    printf("%s: Output buffer out of order: %u > %u at i = %d (i_max = %llu) \n", __FUNCTION__, last_val, *((Itemtype*)output + i), i, bytes / sizeof(Itemtype));
                     printf("      tot_bytes_read  = %llu B = %llu MB\n", tot_bytes_read, tot_bytes_read / (1LLU << 20));
+                    printf("        endX[0] - X[0] = %llu\n", endX[0] - X[0]);
                     printf("        &state[0].num_blocks = %llu\n", (&state[0])->num_blocks);
                     printf("        &state[0].curr_block = %llu\n", (&state[0])->curr_block);
                     printf("        &state[1].num_blocks = %llu\n", (&state[1])->num_blocks);
@@ -665,7 +669,9 @@ void process_buffer(int stream_idx, char** _p, char** _endp) {
             printf("            output[2] = %u\n", *((Itemtype*)output + 2));*/
             if (tot_bytes_written % MB(1LLU) == 0) {
                 //printf("                                                                          \r");
-                printf("Written: %llu B (%llu MB)", tot_bytes_written, tot_bytes_written / (1<<20));
+                printf("    Written: %llu B (%llu MB)", tot_bytes_written, tot_bytes_written / (1<<20));
+                printf("      tot_bytes_read  = %llu B = %llu MB", tot_bytes_read, tot_bytes_read / (1LLU << 20));
+
 
                 //printf("Written: %llu B\n", tot_bytes_written);
             }
@@ -756,6 +762,7 @@ void process_buffer(int stream_idx, char** _p, char** _endp) {
                 printf("        newX = %llu\n", X[stream_idx]);
                 endX[stream_idx] = (char*)state[stream_idx].bq.front() + in_buf_size;
                 printf("        endX = %llu\n", endX[stream_idx]);
+                printf("        endX - newX = %llu\n", endX[stream_idx] - X[stream_idx]);
                 * _p = X[stream_idx];
                 *_endp = endX[stream_idx];
                 printf("          bytes_left[0] = %llu MB\n", bytes_left[0] / (1LLU << 20));
@@ -764,21 +771,33 @@ void process_buffer(int stream_idx, char** _p, char** _endp) {
                 printf("          bytes_left[3] = %llu MB\n", bytes_left[3] / (1LLU << 20));
                 printf("             stream_idx = %llu\n", stream_idx);
                 //bytes_left[stream_idx] -= (std::min)(mem_block_size, old_last_vals * sizeof(Itemtype));
-                bytes_left[stream_idx] -= mem_block_size;
+                bytes_left[stream_idx] -= (old_last_vals * sizeof(Itemtype));
                 printf("          bytes_left[stream_idx] = %llu\n", bytes_left[stream_idx]);
                 printf("            X[stream_idx][0] = %u\n", *((Itemtype*)X[stream_idx]));
                 printf("            X[stream_idx][1] = %u\n", *((Itemtype*)X[stream_idx] + 1));
                 printf("            X[stream_idx][2] = %u\n", *((Itemtype*)X[stream_idx] + 2));
+                printf("            X[1][0] = %u\n", *((Itemtype*)X[1]));
+                printf("            X[1][1] = %u\n", *((Itemtype*)X[1] + 1));
+                printf("            X[1][2] = %u\n", *((Itemtype*)X[1] + 2));
+                printf("            X[2][0] = %u\n", *((Itemtype*)X[2]));
+                printf("            X[2][1] = %u\n", *((Itemtype*)X[2] + 1));
+                printf("            X[2][2] = %u\n", *((Itemtype*)X[2] + 2));
+                printf("            X[3][0] = %u\n", *((Itemtype*)X[3]));
+                printf("            X[3][1] = %u\n", *((Itemtype*)X[3] + 1));
+                printf("            X[3][2] = %u\n", *((Itemtype*)X[3] + 2));
             }
         }
         // not in last block
-        else if (sv->curr_block != sv->num_blocks && bytes_left[stream_idx] > 0)
+        else if (sv->curr_block != sv->num_blocks && bytes_left[stream_idx] > 0 && str_inits[stream_idx] == true)
         {
             free_blocks.push(sv->bq.front());
             sv->bq.pop();
             sv->curr_block++;
-            sv->bufsize -= (mem_block_size * sizeof(Itemtype));
-            ui64 in_buf_size = (std::min)((unsigned long long)mem_block_size, sv->bufsize * sizeof(Itemtype));
+            //sv->bufsize -= (mem_block_size / sizeof(Itemtype));
+            //ui64 in_buf_size = (std::min)((unsigned long long)mem_block_size, sv->bufsize * sizeof(Itemtype));
+            ui64 in_buf_size = mem_block_size;
+            if (sv->curr_block == sv->num_blocks)
+                in_buf_size = sv->num_vals_last_block * sizeof(Itemtype);
             /*if (sv->curr_block == sv->num_blocks)
             {
                 printf("here");
@@ -787,21 +806,34 @@ void process_buffer(int stream_idx, char** _p, char** _endp) {
             }*/
 
             // now must set the appropriate info
+            printf("  stream = %u, in_buf_size = %llu  ", stream_idx, in_buf_size);
+            //printf("  sv->bufsize = %llu  ", sv->bufsize);
             X[stream_idx] = (char*)state[stream_idx].bq.front();
             endX[stream_idx] = (char*)state[stream_idx].bq.front() + in_buf_size;
             *_p = X[stream_idx];
             *_endp = endX[stream_idx];
             bytes_left[stream_idx] -= mem_block_size;
             tot_bytes_read += mem_block_size;
-            
         }
-        else {
+        else if (bytes_left[stream_idx] <= 0) {
             printf("    No more bytes left in stream %u\n", stream_idx);
             printf("          bytes_left[stream_idx] = %llu\n", bytes_left[stream_idx]);
             *_p = X[stream_idx];
             *_endp = X[stream_idx];// +tot_bytes_read;
             //bytes_left[stream_idx] -= tot_bytes_read;
         }
+        else {
+            printf("                    Stream %d initialized\n", stream_idx);
+            str_inits[stream_idx] = true;
+            ui64 in_buf_size = mem_block_size;
+            if (sv->curr_block == sv->num_blocks)
+                in_buf_size = sv->num_vals_last_block * sizeof(Itemtype);
+            X[stream_idx] = (char*)state[stream_idx].bq.front();
+            endX[stream_idx] = (char*)state[stream_idx].bq.front() + in_buf_size;
+            *_p = X[stream_idx];
+            *_endp = endX[stream_idx];
+        }
+
 
         /*while (bytes > 0) {
             DWORD bytes_to_read = min(max_read, bytes);
@@ -844,8 +876,9 @@ void external_sort::init_buffers(char* buf) {
     // need to have a pointer in X to the start of every stream's first block
     FOR(i, num_chunks, 1) {
         char* p = (char*)state[i].bq.front();
-        unsigned in_buf_size = (std::min)(this->block_size, state[i].bufsize * sizeof(Itemtype));
-        
+        ui64 in_buf_size = mem_block_size;
+        if (state[i].curr_block == state[i].num_blocks)
+            in_buf_size = state[i].num_vals_last_block * sizeof(Itemtype);
         X[i] = p;
         endX[i] = p + in_buf_size;
     }
@@ -883,6 +916,8 @@ int external_sort::merge_sort()
     printf("\n%s\n", __FUNCTION__);
     num_chunks = (this->file_size % this->chunk_size == 0) ? (this->file_size / this->chunk_size) : ((this->file_size / this->chunk_size) + 1);
     printf("    num_chunks = %llu\n", num_chunks);
+    file_size = this->file_size;
+    chunk_size = this->chunk_size;
     tot_bytes_read = 0;
     mem_block_size = this->block_size;
     num_refills = 0;
@@ -1049,11 +1084,15 @@ int external_sort::merge_sort()
         //unsigned long long delta = 0;
         //unsigned long long largest_chunk = 0;
         delta = (2 * (this->merge_mem_avail / sizeof(Itemtype)) / (num_chunks * (num_chunks + 1)));
-        largest_chunk = num_chunks * delta;
-
         printf("    Number of chunks  = %llu\n", num_chunks);
         printf("       this->merge_mem_avail  = %llu MB\n", this->merge_mem_avail / (1LLU << 20));
         printf("       delta          = %llu vals (%llu MB)\n", delta, delta * sizeof(Itemtype) / (1LLU << 20));
+        //delta -= (sizeof(Regtype) / sizeof(Itemtype) - (delta % (sizeof(Regtype) / sizeof(Itemtype))));
+        delta -= delta % ( sizeof(Regtype) / sizeof(Itemtype) );
+        printf("       delta          = %llu vals (%llu MB)\n", delta, delta * sizeof(Itemtype) / (1LLU << 20));
+        largest_chunk = num_chunks * delta;
+
+        
         printf("       largest_chunk  = %llu vals (%llu MB)\n", largest_chunk, largest_chunk * sizeof(Itemtype) / (1LLU << 20));
 
 
@@ -1283,7 +1322,9 @@ int external_sort::merge_sort()
             FOR(i, num_chunks, 1) {
                 bytes_left[i] = (std::min)(tot_bytes, this->chunk_size * sizeof(Itemtype));
                 tot_bytes -= (this->chunk_size * sizeof(Itemtype));
+                str_inits[i] = false;
             }
+         
             if (two_real_chunks) {
                 bytes_left[2] = 0;
                 bytes_left[3] = 0;
