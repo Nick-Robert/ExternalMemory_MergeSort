@@ -26,7 +26,7 @@
 
 template<typename Reg, typename Item>
 void sort_bench(ui writer_type, int argc, char** argv) {
-//#define STD_CORRECTNESS
+	#define STD_CORRECTNESS
 	ui size_pow = atoi(argv[1]);
 	ui n_threads = atoi(argv[2]);
 	ui n_cores, min_k = 2;
@@ -67,10 +67,10 @@ void sort_bench(ui writer_type, int argc, char** argv) {
 	}
 #ifdef STD_CORRECTNESS
 	printf("Sorting with std::sort ... ");
-	Item* sorted = (Item*)VirtualAlloc(NULL, size, MEM_COMMIT, PAGE_READWRITE); 
+	Item* sorted = (Item*)VirtualAlloc(NULL, size, MEM_COMMIT, PAGE_READWRITE);
 	memcpy(sorted, data, size);
 	hrc::time_point st1 = hrc::now();
-	sort_every(sorted, n_items, n_items);
+	SortEvery(sorted, n_items, n_items);
 	hrc::time_point en1 = hrc::now();
 	printf("done, ");
 	double el1 = ELAPSED_MS(st1, en1);
@@ -82,7 +82,7 @@ void sort_bench(ui writer_type, int argc, char** argv) {
 		if (repeat > 0) {
 			memcpy(data, data_back, size);
 			memset(output, 0, size);
-			if (n_threads > 1) 
+			if (n_threads > 1)
 				memset(kway_buf, 0, kway_buf_size);
 		}
 
@@ -90,11 +90,7 @@ void sort_bench(ui writer_type, int argc, char** argv) {
 		Item* end2 = data2 + n_items;
 		Item* output2 = output;
 		Item* o = data;
-		for (int i = 0; i < 5; i++) {
-			//printf("	o[%d]        = %llu\n", i, o[i]);
-			printf("	data[%d]     = %llu\n", i, data[i]);
-			//printf("	output[%d]   = %llu\n", i, output[i]);
-		}
+
 		hrc::time_point st1 = hrc::now();
 		switch (n_threads) {
 		case 1:
@@ -103,24 +99,10 @@ void sort_bench(ui writer_type, int argc, char** argv) {
 		default:
 			o = origami_sorter::sort_multi_thread<Item, Reg>(data2, output2, n_items, n_threads, n_cores, min_k, kway_buf);
 		}
-		
+
 		hrc::time_point en1 = hrc::now();
 
-		//printf("\r                               \r");
-		/*printf("	o        = %llu\n", o);
-		printf("	data     = %llu\n", data);
-		printf("	data2    = %llu\n", data2);
-		printf("	output   = %llu\n", output);
-		printf("	output2  = %llu\n", output2);
-		printf("	end2     = %llu\n", end2);
-		printf("	end      = %llu\n", end);*/
-		for (int i = 0; i < 5; i++) {
-			printf("	o[%d]        = %llu\n", i, o[i]);
-			printf("	data[%d]     = %llu\n", i, data[i]);
-			printf("	output[%d]   = %llu\n", i, output[i]);
-		}
-
-
+		printf("\r                               \r");
 
 		double el = ELAPSED(st1, en1);
 		double sp = double(n_items) / el / 1e6;
@@ -128,13 +110,13 @@ void sort_bench(ui writer_type, int argc, char** argv) {
 
 #ifdef STD_CORRECTNESS
 		printf("Iter %3lu done, checking correctness w/ std::sort ... ", i);
-		if (!sort_correctness_checker_std(o, sorted, n_items)) {
+		if (!SortCorrectnessCheckerSTD(o, sorted, n_items)) {
 			printf("Correctness error @ %llu\n", i);
 			exit(1);
 		}
 		printf("done\r                                                                    \r");
 #else 
-		if (!sort_correctness_checker(o, n_items)) {
+		if (!SortCorrectnessChecker(o, n_items)) {
 			printf("Correctness error @ %llu\n", i);
 			//break;
 			//system("pause");
@@ -165,7 +147,7 @@ int main(int argc, char** argv) {
 
 	// single thread sort test
 	sort_bench<Regtype, Itemtype>(MT, argc, argv);
-	//system("pause");
+	system("pause");
 
 	return 0;
 }

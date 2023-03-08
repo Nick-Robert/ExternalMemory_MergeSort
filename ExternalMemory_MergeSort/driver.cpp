@@ -189,9 +189,6 @@ int main(int argc, char** argv)
             }
             else {*/
             //}
-
-
-            
         //}
         curr_itr = 0;
     }

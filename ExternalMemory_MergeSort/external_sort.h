@@ -146,7 +146,7 @@ public:
 
 void process_buffer(int stream_idx, char** _p, char** _endp);
 
-uint64_t populate_blocks(unsigned idx, unsigned long long remaining_vals, HANDLE* f, bool needs_allocation);
+uint64_t populate_blocks(unsigned idx, unsigned long long remaining_vals, unsigned long long total_vals_to_read, HANDLE* f);
 
 
 #endif
