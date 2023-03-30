@@ -36,7 +36,7 @@ int main(int argc, char** argv)
     char fname[] = "D:\\output_files\\test.bin";
     char chunk_sorted_fname[] = "D:\\output_files\\sorted_test.bin";
     char full_sorted_fname[] = "D:\\output_files\\merge_test.bin";
-    char metric_file_fname[] = "D:\\output_files\\BENCH_origami_external_6TB.csv";
+    char metric_file_fname[] = "D:\\output_files\\BENCH_origami_external_6TB_multifill_2limited_bigdata-compare_2GB-mem-1TB-file.csv";
     //char metric_file_fname[] = "D:\\output_files\\BENCH_origami_internal_sort_4_way.csv";
     //char metric_file_fname[] = "D:\\output_files\\BENCH_minheap_external_6TB.csv";
     /*char fname[] = "output_files\\test.bin";
@@ -111,84 +111,69 @@ int main(int argc, char** argv)
 
     //fs_max = 1LLU << (unsigned)log2(free_ds.QuadPart / (3 * sizeof(Itemtype)));
     fs_max = 1LLU << (unsigned)log2(7340204097536LLU / (3 * sizeof(Itemtype)));
-
-    //unsigned long long fs_max = 1LLU << 26;
-    printf("fs_max = %llu\n", fs_max);
-
-    //unsigned long long ms_max = (1LLU << 30) / sizeof(Itemtype);          // 2 GB
     unsigned long long fs_start;// , ms_start;
 
-    //ms_start = ms_max;
-    fs_start = fs_max;
-    //fs_start = 2 * (static_cast<unsigned long long>(1) << 30) / sizeof(Itemtype);                                  // 1 GB
-    fs_start = (1LLU << 20) / sizeof(Itemtype);
-    //fs_start = 2048 / sizeof(Itemtype);
-    //268435456
-    fs_start = 268435456 * 2LLU;
-    //fs_start = 524288;
-    //printf("    fs_max = %llu\n", fs_max);
-    //printf("    fs_start = %llu\n", fs_start);
+    //fs_start = 268435456 * 2LLU;
+    //fs_start = 268435456 * 2LLU * (1LLU << 7);
+    //fs_start = 268435456 * 2LLU * (1LLU << 6);
+    //fs_start = (1LLU << 38) / sizeof(Itemtype);
+    fs_start = fs_max / 2;
 
-    //ms_start = 100 * (static_cast<unsigned long long>(1) << 20) / sizeof(Itemtype)/*(static_cast<unsigned long long>(1) << 20) / sizeof(Itemtype)*/;                               // 100 MB
-    //ms = ms_start;
+    fs_max = fs_start;
+
+
     fs = fs_start;
+
     unsigned num_fs_iterations = 0, num_ms_iterations = 0, number_iterations = 0;
     while (fs <= fs_max) {
         num_fs_iterations++;
         fs *= 2;
     }
-    /*while (ms <= ms_max) {
-        num_ms_iterations++;
-        ms *= 2;
-    }*/
-
 
     number_iterations = num_fs_iterations;// *num_ms_iterations;
     printf("fs_start = %llu\n", fs_start);
+    printf("fs_max = %llu\n", fs_max);
 
     unsigned itr = 0;
     unsigned curr_itr = 0;
     // lowest fs can be is 512 bytes (may be lower bounded by something else too)
     for (fs = fs_start; fs <= fs_max; fs *= 2) {
-        //for (ms = ms_start; ms <= ms_max; ms *= 2) {
-            itr++;
-            //printf("Iteration %u / %u: fs = %llu, ms = %llu\n", itr, number_iterations, fs, ms);
-            printf("Iteration %u / %u: fs = %llu B (%llu MB) (%llu vals)\n", itr, number_iterations, fs * sizeof(Itemtype), fs * sizeof(Itemtype) / (1LLU << 20), fs);
-            if (seq_run) {
-                external_sort extsrt(fs, ms, seq_fname, seq_fname, seq_fname, metric_file_fname, num_runs, TEST_SORT, GIVE_VALS, DEBUG);
-                extsrt.generate_averages();
-                extsrt.save_metrics(true, false);
-                extsrt.shallow_validate();
-                if (fs <= 2621440) {
-                    extsrt.deep_validate();
-                }
-                printf("\n");
+        itr++;
+        //printf("Iteration %u / %u: fs = %llu, ms = %llu\n", itr, number_iterations, fs, ms);
+        printf("\n\nIteration %u / %u: fs = %llu B (%llu MB) (%llu vals)\n", itr, number_iterations, fs * sizeof(Itemtype), fs * sizeof(Itemtype) / (1LLU << 20), fs);
+        if (seq_run) {
+            external_sort extsrt(fs, ms, seq_fname, seq_fname, seq_fname, metric_file_fname, num_runs, TEST_SORT, GIVE_VALS, DEBUG);
+            extsrt.generate_averages();
+            extsrt.save_metrics(true, false);
+            //extsrt.shallow_validate();
+            if (fs <= 2621440) {
+                extsrt.deep_validate();
             }
-            else
-            {
-                external_sort extsrt(fs, ms, fname, chunk_sorted_fname, full_sorted_fname, metric_file_fname, num_runs, TEST_SORT, GIVE_VALS, DEBUG);
-                extsrt.generate_averages();
-                extsrt.save_metrics(true, false);
-                extsrt.shallow_validate();
-                if (fs <= 2621440) {
-                    extsrt.deep_validate();
-                }
-                printf("\n");
-                DeleteFile(fname);
-                DeleteFile(chunk_sorted_fname);
-                DeleteFile(full_sorted_fname);
-
+            printf("\n");
+        }
+        else
+        {
+            external_sort extsrt(fs, ms, fname, chunk_sorted_fname, full_sorted_fname, metric_file_fname, num_runs, TEST_SORT, GIVE_VALS, DEBUG);
+            extsrt.generate_averages();
+            extsrt.save_metrics(true, false);
+            extsrt.shallow_validate();
+            if (fs <= 2621440) {
+                extsrt.deep_validate();
             }
-            //extsrt.print_metrics();
-            /*if (ms * 2 <= ms_max && curr_itr != 0)
-            {
-                extsrt.save_metrics();
-            }
-            else if (ms*2 > ms_max && curr_itr != 0) {
-                extsrt.save_metrics(false, true);
-            }
-            else {*/
-            //}
+            printf("\n");
+            DeleteFile(fname);
+            DeleteFile(chunk_sorted_fname);
+            DeleteFile(full_sorted_fname);
+        }
+        //extsrt.print_metrics();
+        /*if (ms * 2 <= ms_max && curr_itr != 0)
+        {
+            extsrt.save_metrics();
+        }
+        else if (ms*2 > ms_max && curr_itr != 0) {
+            extsrt.save_metrics(false, true);
+        }
+        else {*/
         //}
         curr_itr = 0;
     }

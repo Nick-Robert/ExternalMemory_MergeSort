@@ -3,7 +3,8 @@
 //#include <vector>
 //#include "commons.h"
 #include "MinHeap.h"
-#include <queue>
+
+enum distribution { LCG, PARETO, FIB, REVERSE, ZIPF };
 
 
 struct state_vars {
@@ -25,7 +26,8 @@ struct state_vars {
     // in number of blocks (1 start)
     uint64_t curr_block;
     // how many vals are in the last block
-    uint64_t num_vals_last_block;
+    std::vector<std::pair<uint64_t, uint64_t>> num_vals_last_block;
+     //uint64_t num_vals_last_block;
 
     /*  deals with buffer  */
 
@@ -99,12 +101,14 @@ class external_sort
     double generation_duration;
     double write_duration;
     double sort_duration;
+    double sort_write_duration;
     double read_duration;
     double merge_duration;
     double load_duration;
     double merge_read_duration;
     double heap_duration;
     double merge_write_duration;
+    double merge_populate_duration;
 
     // validation vals
     int num_runs;
@@ -146,7 +150,9 @@ public:
 
 void process_buffer(int stream_idx, char** _p, char** _endp);
 
-uint64_t populate_blocks(unsigned idx, unsigned long long remaining_vals, unsigned long long total_vals_to_read, HANDLE* f);
+uint64_t populate_blocks(unsigned idx, unsigned long long remaining_vals, unsigned long long total_vals_to_read, HANDLE* f, unsigned num_blocks);
+
+//uint64_t normal_populate_blocks(unsigned idx, unsigned long long remaining_vals, unsigned long long total_vals_to_read, HANDLE* f, unsigned num_blocks);
 
 
 #endif

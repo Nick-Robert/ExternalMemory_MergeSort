@@ -110,7 +110,7 @@ external_sort::external_sort(unsigned long long int _FILE_SIZE, unsigned long lo
     mem_avail = ((mem_avail + 511) & (~511));
     //mem_avail = 1LLU << (unsigned)log2(mem_avail);
     // the following used for origami sort benchmark
-    mem_avail = (std::min)((1LLU << (unsigned)log2(mem_avail)) / 8, sizeof(Itemtype) * _FILE_SIZE / (2));
+    mem_avail = (std::min)((1LLU << (unsigned)log2(mem_avail)), sizeof(Itemtype) * _FILE_SIZE / (2));
     //mem_avail = 1LLU << 30
 
     this->merge_mem_avail = mem_avail;
@@ -156,7 +156,7 @@ int external_sort::write_file()
         printf("__FUNCTION__write_file(): Failed opening file with %d\n", GetLastError());
         exit(1);
     }
-
+    
 
     const unsigned int a = 214013;
     // const unsigned int m = 4096*4;

@@ -1,6 +1,6 @@
 /*
 
-THIS VERSION HAS VARIABLE CHUNK SIZES IN MEMORY (CALLED PORTIONS) AND UTILIZES ORIGAMI SORT AND ORIGAMI MERGE SORT WITH MULTI BUCKET REFILL
+THIS VERSION HAS VARIABLE CHUNK SIZES IN MEMORY (CALLED PORTIONS) AND UTILIZES ORIGAMI SORT AND ORIGAMI MERGE SORT WITH 1 BUCKET REFILL
 
 Notes:
 *** OLD
@@ -40,7 +40,6 @@ Known issues:
 #include <istream>
 #include <windows.h>
 #include <cmath>
-#include <utility>
 #include "external_sort.h"
 #include "external_sorter.h"
 #include "MinHeap.h"
@@ -62,10 +61,6 @@ using namespace std;
     wbuffer[i + k] = next##k;                   \
 
 //#define DEBUG_PRINT
-//#define MULTI_DEBUG_PRINT
-//#define MERGE_DEBUG
-
-enum distribution gen_type;
 
 struct my_lesser {
     bool operator()(const MinHeapNode& x, const MinHeapNode& y) const {
@@ -98,8 +93,6 @@ external_sort::external_sort(unsigned long long int _FILE_SIZE, unsigned long lo
     this->merge_populate_duration = 0;
     this->merge_duration = 0;
 
-    gen_type = LCG;
-
     MEMORYSTATUSEX statex = { 0 };
     statex.dwLength = sizeof(statex);
     GlobalMemoryStatusEx(&statex);
@@ -110,7 +103,7 @@ external_sort::external_sort(unsigned long long int _FILE_SIZE, unsigned long lo
     mem_avail = ((mem_avail + 511) & (~511));
     //mem_avail = 1LLU << (unsigned)log2(mem_avail);
     // the following used for origami sort benchmark
-    mem_avail = (std::min)((1LLU << (unsigned)log2(mem_avail)) / 8, sizeof(Itemtype) * _FILE_SIZE / (2));
+    mem_avail = (std::min)(1LLU << (unsigned)log2(mem_avail), sizeof(Itemtype) * _FILE_SIZE / 2);
     //mem_avail = 1LLU << 30
 
     this->merge_mem_avail = mem_avail;
@@ -156,129 +149,109 @@ int external_sort::write_file()
         printf("__FUNCTION__write_file(): Failed opening file with %d\n", GetLastError());
         exit(1);
     }
-
+    Itemtype CREATE_VAR(next, 0) = rand();
+    Itemtype CREATE_VAR(next, 1) = rand();
+    Itemtype CREATE_VAR(next, 2) = rand();
+    Itemtype CREATE_VAR(next, 3) = rand();
+    Itemtype CREATE_VAR(next, 4) = rand();
+    Itemtype CREATE_VAR(next, 5) = rand();
+    Itemtype CREATE_VAR(next, 6) = rand();
+    Itemtype CREATE_VAR(next, 7) = rand();
 
     const unsigned int a = 214013;
     // const unsigned int m = 4096*4;
     const unsigned int c = 2531011;
     while (number_written < this->file_size) {
-        if (gen_type == LCG)
-        {
-            Itemtype CREATE_VAR(next, 0) = rand();
-            Itemtype CREATE_VAR(next, 1) = rand();
-            Itemtype CREATE_VAR(next, 2) = rand();
-            Itemtype CREATE_VAR(next, 3) = rand();
-            Itemtype CREATE_VAR(next, 4) = rand();
-            Itemtype CREATE_VAR(next, 5) = rand();
-            Itemtype CREATE_VAR(next, 6) = rand();
-            Itemtype CREATE_VAR(next, 7) = rand();
+        // populate buffer - utilizes the Linear Congruential Generator method
+        // https://en.wikipedia.org/wiki/Linear_congruential_generator
 
-            // populate buffer - utilizes the Linear Congruential Generator method
-            // https://en.wikipedia.org/wiki/Linear_congruential_generator
-
-            unsigned long num_vals_to_gen = 0;
-            if (number_written + this->write_buffer_size > this->file_size) {
-                if (number_written) {
-                    num_vals_to_gen = this->file_size % number_written;
-                }
-                else {
-                    num_vals_to_gen = this->file_size;
-                }
+        unsigned long num_vals_to_gen = 0;
+        if (number_written + this->write_buffer_size > this->file_size) {
+            if (number_written) {
+                num_vals_to_gen = this->file_size % number_written;
             }
             else {
-                num_vals_to_gen = this->write_buffer_size;
+                num_vals_to_gen = this->file_size;
             }
-            if (this->debug) {
-                printf("  num_vals_to_gen = %lu\n", num_vals_to_gen);
-            }
-            QueryPerformanceCounter(&start);
-            for (unsigned int i = 0; i < num_vals_to_gen; i += 8) {
-                MAKE_KEY(0);
-                MAKE_KEY(1);
-                MAKE_KEY(2);
-                MAKE_KEY(3);
-                MAKE_KEY(4);
-                MAKE_KEY(5);
-                MAKE_KEY(6);
-                MAKE_KEY(7);
-            }
-            QueryPerformanceCounter(&end);
-            generation_duration += end.QuadPart - start.QuadPart;
-
-            if (this->give_vals) {
-                for (unsigned int i = 0; i < 2 && i < num_vals_to_gen; i++) {
-                    printf("buffer[%d] = %llu\n", i, wbuffer[i]);
-                }
-                /*for (unsigned int i = num_vals_to_gen - 2; i < num_vals_to_gen; i++) {
-                    printf("buffer[%d] = %llu\n", i, wbuffer[i]);
-                }*/
-            }
-
-            unsigned long num_vals_to_write = 0;
-            unsigned long new_num_vals_to_write = 0;
-            if (number_written + this->write_buffer_size > this->file_size) {
-                if (number_written) {
-                    num_vals_to_write = this->file_size % number_written;
-                }
-                else {
-                    num_vals_to_write = this->file_size;
-                }
-                new_num_vals_to_write = (num_vals_to_write + 127) & (~127);
-            }
-            else {
-                num_vals_to_write = this->write_buffer_size;
-                new_num_vals_to_write = this->write_buffer_size;
-            }
-            if (this->debug) {
-                printf("    num_vals_to_write = %lu\n", num_vals_to_write);
-                printf("    new_num_vals_to_write = %lu\n", new_num_vals_to_write);
-            }
-            DWORD num_bytes_written;
-            hrc::time_point s, e;
-            s = hrc::now();
-            BOOL was_success = WriteFile(pfile, wbuffer, sizeof(Itemtype) * new_num_vals_to_write, &num_bytes_written, NULL);
-            e = hrc::now();
-            double el = ELAPSED_MS(s, e);
-            //QueryPerformanceCounter(&start);
-            //QueryPerformanceCounter(&end);
-            if (!(was_success)) {
-                printf("%s: Failed writing to file with %d\n", __FUNCTION__, GetLastError());
-                exit(1);
-            }
-
-            //write_duration += end.QuadPart - start.QuadPart;
-            write_duration += (el / 1000);
-            number_written += num_vals_to_write;
-
-            if ((number_written * sizeof(Itemtype)) % GB(1LLU) == 0) {
-                printf("                                                                          \r");
-                printf("    Written: %llu B (%llu MB)", number_written * sizeof(Itemtype), number_written * sizeof(Itemtype) / (1 << 20));
-                //printf("      tot_bytes_read  = %llu B = %llu MB\n", tot_bytes_read, tot_bytes_read / (1LLU << 20));
-            }
-            if (this->debug) {
-                printf("    number_written = %llu\n", number_written);
-                printf("    bufsize = %d\n", this->write_buffer_size);
-                printf("    windows_fs.QuadPart = %llu\n", this->windows_fs.QuadPart);
-                printf("    windows_fs.HighPart = %llu\n", this->windows_fs.HighPart);
-                printf("    windows_fs.LowPart = %llu\n", this->windows_fs.LowPart);
-            }
-        }
-        else if (gen_type == PARETO) {
-
-        }
-        else if (gen_type == FIB) {
-
-        }
-        else if (gen_type == REVERSE) {
-
-        }
-        else if (gen_type == ZIPF) {
-
         }
         else {
-            printf("    Unknown gen_type value %u\n");
+            num_vals_to_gen = this->write_buffer_size;
+        }
+        if (this->debug) {
+            printf("  num_vals_to_gen = %lu\n", num_vals_to_gen);
+        }
+        QueryPerformanceCounter(&start);
+        for (unsigned int i = 0; i < num_vals_to_gen; i += 8) {
+            MAKE_KEY(0);
+            MAKE_KEY(1);
+            MAKE_KEY(2);
+            MAKE_KEY(3);
+            MAKE_KEY(4);
+            MAKE_KEY(5);
+            MAKE_KEY(6);
+            MAKE_KEY(7);
+        }
+        QueryPerformanceCounter(&end);
+        generation_duration += end.QuadPart - start.QuadPart;
+
+        if (this->give_vals) {
+            for (unsigned int i = 0; i < 2 && i < num_vals_to_gen; i++) {
+                printf("buffer[%d] = %llu\n", i, wbuffer[i]);
+            }
+            /*for (unsigned int i = num_vals_to_gen - 2; i < num_vals_to_gen; i++) {
+                printf("buffer[%d] = %llu\n", i, wbuffer[i]);
+            }*/
+        }
+
+        unsigned long num_vals_to_write = 0;
+        unsigned long new_num_vals_to_write = 0;
+        if (number_written + this->write_buffer_size > this->file_size) {
+            if (number_written) {
+                num_vals_to_write = this->file_size % number_written;
+            }
+            else {
+                num_vals_to_write = this->file_size;
+            }
+            new_num_vals_to_write = (num_vals_to_write + 127) & (~127);
+        }
+        else {
+            num_vals_to_write = this->write_buffer_size;
+            new_num_vals_to_write = this->write_buffer_size;
+        }
+        if (this->debug) {
+            printf("    num_vals_to_write = %lu\n", num_vals_to_write);
+            printf("    new_num_vals_to_write = %lu\n", new_num_vals_to_write);
+        }
+        DWORD num_bytes_written;
+        hrc::time_point s, e;
+        s = hrc::now();
+        BOOL was_success = WriteFile(pfile, wbuffer, sizeof(Itemtype) * new_num_vals_to_write, &num_bytes_written, NULL);
+        e = hrc::now();
+        double el = ELAPSED_MS(s, e);
+        //QueryPerformanceCounter(&start);
+        //QueryPerformanceCounter(&end);
+        if (!(was_success)) {
+            printf("%s: Failed writing to file with %d\n", __FUNCTION__, GetLastError());
             exit(1);
         }
+
+        //write_duration += end.QuadPart - start.QuadPart;
+        write_duration += (el / 1000);
+        number_written += num_vals_to_write;
+
+        if ((number_written * sizeof(Itemtype)) % GB(1LLU) == 0) {
+            printf("                                                                          \r");
+            printf("    Written: %llu B (%llu MB)", number_written * sizeof(Itemtype), number_written * sizeof(Itemtype) / (1 << 20));
+            //printf("      tot_bytes_read  = %llu B = %llu MB\n", tot_bytes_read, tot_bytes_read / (1LLU << 20));
+        }
+        if (this->debug) {
+            printf("    number_written = %llu\n", number_written);
+            printf("    bufsize = %d\n", this->write_buffer_size);
+            printf("    windows_fs.QuadPart = %llu\n", this->windows_fs.QuadPart);
+            printf("    windows_fs.HighPart = %llu\n", this->windows_fs.HighPart);
+            printf("    windows_fs.LowPart = %llu\n", this->windows_fs.LowPart);
+        }
+
     }
     CloseHandle(pfile);
     if (number_written % 512 != 0) {
@@ -345,21 +318,17 @@ unsigned long read_into_buffer(HANDLE* fp, Itemtype* buf, unsigned long long tot
 }
 
 
-unsigned num_chunks;
-double c;
-unsigned int_c;
-
+int num_chunks;
 int orig_num_chunks;
 HANDLE fp[MTREE_MAX_WAY + 1];
 ui64 bytes_left[MTREE_MAX_WAY + 1];
 bool str_inits[MTREE_MAX_WAY + 1];
-bool chunk_done[MTREE_MAX_WAY + 1];
 char* X[MTREE_MAX_WAY + 1], * endX[MTREE_MAX_WAY + 1];
 //ui64 in_buf_size, out_buf_size;
 ui64 nseeks;
 ui64 tot_bytes_written;
 ui64 largest_chunk;
-//ui64 delta;
+ui64 delta;
 unsigned long long num_refills;
 ui64 tot_bytes_read;
 std::vector<state_vars> state;
@@ -371,10 +340,6 @@ ui64 chunk_size;
 ui64 file_size;
 Itemtype glb_last_val;
 bool seek_to_write;
-std::vector<uint64_t> z;
-bool overlap_check;
-unsigned extra_empty_streams;
-unsigned last_idx_touched;
 
 
 int external_sort::sort_file()
@@ -656,11 +621,15 @@ int external_sort::sort_file()
 }
 
 
-uint64_t populate_blocks(unsigned idx, unsigned long long remaining_vals, unsigned long long total_vals_to_read, HANDLE* fp, unsigned num_blocks)
+uint64_t populate_blocks(unsigned idx, unsigned long long remaining_vals, unsigned long long total_vals_to_read, HANDLE* fp)
 {
     HANDLE f = *fp;
     DWORD num_bytes_touched;
+    //unsigned long long tot_bytes = sizeof(Itemtype) * new_num_vals_to_read;
     unsigned long long num_loops = 0;
+    // - 511 since it needs to be divisible by 512
+    //unsigned num_to_read = UINT_MAX - 511;
+    // want to read only 1 MB at a time
     unsigned num_to_read = mem_block_size;
     uint64_t tot_bytes = remaining_vals * sizeof(Itemtype);
     uint64_t total_overread_bytes = total_vals_to_read * sizeof(Itemtype);
@@ -670,13 +639,16 @@ uint64_t populate_blocks(unsigned idx, unsigned long long remaining_vals, unsign
 #ifdef DEBUG_PRINT
     printf("        %s: state[idx].num_blocks = %llu\n", __FUNCTION__, state[idx].num_blocks);
 #endif
-    for (int j = 0; j < num_blocks; j++) {
+    for (int j = 0; j < state[idx].num_blocks; j++) {
         unsigned long long vals_to_copy = (std::min)(total_vals_to_read, mem_block_size / sizeof(Itemtype));
+        //printf("j = %u, vals_to_copy = %llu\n", j, vals_to_copy);
         LARGE_INTEGER aligned_vals_to_copy = { 0 };
         aligned_vals_to_copy.QuadPart = (vals_to_copy + 127) & (~127);
+        //unsigned long long padded_vals_to_copy = vals_to_copy;
 
-        if (j == num_blocks - 1)
+        if (j == state[idx].num_blocks - 1)
         {
+            //padded_vals_to_copy += (sizeof(Regtype) / sizeof(Itemtype) - (vals_to_copy % (sizeof(Regtype) / sizeof(Itemtype))));
             num_vals_last_block = (std::min)(remaining_vals, mem_block_size / sizeof(Itemtype));
 #ifdef DEBUG_PRINT
 
@@ -688,7 +660,7 @@ uint64_t populate_blocks(unsigned idx, unsigned long long remaining_vals, unsign
 
         if (free_blocks.size() == 0)
         {
-            //printf("    free block queue is 0 with num_blocks = %u and j = %u\n", num_blocks, j);
+            //printf("    free block queue is 0 with num_blocks = %u and j = %u\n", this->state[idx].num_blocks, j);
             Itemtype* temp = (Itemtype*)_aligned_malloc(mem_block_size, glb_bytes_per_sector);
             free_blocks.push(temp);
         }
@@ -730,11 +702,9 @@ void process_buffer(int stream_idx, char** _p, char** _endp) {
     // define X and endX to be pointers on the current block for each stream
     // experiment with size of memory blocks to help minimize process buffer calls (1MB -> 16 MB -> 32 -> 64)
 #define CORRECTNESS_CHECK
-//#define MULTI_DEBUG_PRINT
     if (stream_idx == -1) {		// flush output buffer
         char* output = X[num_chunks];
         char* endpos = *_p;
-        overlap_check = false;
         //printf("endpos = %llx\n", endpos);
         if (endpos != nullptr) {
             ui64 bytes = endpos - output;
@@ -755,56 +725,30 @@ void process_buffer(int stream_idx, char** _p, char** _endp) {
 
 #ifdef CORRECTNESS_CHECK
             for (int i = 0; i < bytes / sizeof(Itemtype); i++) {
-                if (*((Itemtype*)output + i) == 357657464) {
-                    overlap_check = true;
-                }
                 if (*((Itemtype*)output + i) < glb_last_val) {
                     printf("%s: Output buffer out of order: %u > %u at i = %d (i_max = %llu) \n", __FUNCTION__, glb_last_val, *((Itemtype*)output + i), i, bytes / sizeof(Itemtype));
-                    //printf("      tot_bytes_read  = %llu B = %llu MB\n", tot_bytes_read, tot_bytes_read / (1LLU << 20));
+                    printf("      tot_bytes_read  = %llu B = %llu MB\n", tot_bytes_read, tot_bytes_read / (1LLU << 20));
                     printf("        tot_bytes_written = %llu B (%llu MB)\n", tot_bytes_written, tot_bytes_written / (1 << 20));
                     printf("            output[1] = %llu\n", *((Itemtype*)output + 1));
-                    printf("            output[%u] = %llu\n", 262125, *((Itemtype*)output + 262125));
-                    printf("            output[%u] = %llu\n", 262126, *((Itemtype*)output + 262126));
-                    printf("            output[%u] = %llu\n", 262127, *((Itemtype*)output + 262127));
-                    printf("            output[%u] = %llu\n", 262128, *((Itemtype*)output + 262128));
-                    printf("            output[%u] = %llu\n", 262129, *((Itemtype*)output + 262129));
-                    printf("            output[%u] = %llu\n", 262130, *((Itemtype*)output + 262130));
-                    printf("            output[%u] = %llu\n", 262131, *((Itemtype*)output + 262131));
                     printf("        endX[0] - X[0] = %llu\n", endX[0] - X[0]);
-                    printf("            last_idx_touched = %u\n", last_idx_touched);
-                    /*printf("        &state[%d].num_blocks = %llu\n", (&state[0])->num_blocks);
-                    printf("        &state[%d].curr_block = %llu\n", (&state[0])->curr_block);*/
-                    /*
+                    printf("        &state[0].num_blocks = %llu\n", (&state[0])->num_blocks);
+                    printf("        &state[0].curr_block = %llu\n", (&state[0])->curr_block);
                     printf("        &state[1].num_blocks = %llu\n", (&state[1])->num_blocks);
                     printf("        &state[1].curr_block = %llu\n", (&state[1])->curr_block);
                     printf("        &state[2].num_blocks = %llu\n", (&state[2])->num_blocks);
                     printf("        &state[2].curr_block = %llu\n", (&state[2])->curr_block);
                     printf("        &state[3].num_blocks = %llu\n", (&state[3])->num_blocks);
-                    printf("        &state[3].curr_block = %llu\n", (&state[3])->curr_block);*/
-                    for (int j = 0; j < num_chunks; j++) {
-                        printf("          bytes_left[%d] = %llu B\n", j, bytes_left[j]);
-                    }
-                    /*printf("          bytes_left[0] = %llu B\n", bytes_left[0]);
+                    printf("        &state[3].curr_block = %llu\n", (&state[3])->curr_block);
+                    printf("          bytes_left[0] = %llu B\n", bytes_left[0]);
                     printf("          bytes_left[1] = %llu B\n", bytes_left[1]);
                     printf("          bytes_left[2] = %llu B\n", bytes_left[2]);
-                    printf("          bytes_left[3] = %llu B\n", bytes_left[3]);*/
-                    printf("          overlap_check = %llu\n", overlap_check);
-                    for (int j = 0; j < num_chunks; j++) {
-                        printf("    j = %u\n", j);
-                        for (int m = 0; m < state[j].num_vals_last_block.size(); m++) {
-                            printf("        state[j].num_vals_last_block.size() = %u\n", state[j].num_vals_last_block.size());
-                            printf("            state[j].num_vals_last_block.at(m).first  = %u\n", state[j].num_vals_last_block.at(m).first);
-                            printf("            state[j].num_vals_last_block.at(m).second = %u\n", state[j].num_vals_last_block.at(m).second);
-                            printf("            state[j].curr_block                       = %u\n", state[j].curr_block);
-                            printf("            endX - newX = %llu\n", endX[j] - X[j]);
-
-                        }
-                    }
+                    printf("          bytes_left[3] = %llu B\n", bytes_left[3]);
                     exit(1);
                 }
                 glb_last_val = *((Itemtype*)output + i);
             }
 #endif
+
             if (tot_bytes_written % GB(1LLU) == 0) {
                 printf("                                                                          \r");
                 printf("    Written: %llu B (%llu MB)", tot_bytes_written, tot_bytes_written / (1 << 20));
@@ -821,13 +765,16 @@ void process_buffer(int stream_idx, char** _p, char** _endp) {
         //ui64 bytes = min(in_buf_size, bytes_left[stream_idx]);
         DWORD bytes_read;
         char* p = X[stream_idx];
-        //DWORD max_read = mem_block_size;
+        DWORD max_read = mem_block_size;
 
         state_vars* sv = &state[stream_idx];
-        // last block just emptied
+
+        // it should be impossible for the current block to not be empty
+        // it's in the last block
         if (sv->curr_block == sv->num_blocks && bytes_left[stream_idx] > 0 && str_inits[stream_idx] == true)
         {
 #ifdef DEBUG_PRINT
+            printf("    Refilling... stream = %u\n", stream_idx);
             printf("      tot_bytes_read  = %llu B = %llu MB\n", tot_bytes_read, tot_bytes_read / (1LLU << 20));
             printf("        tot_bytes_written = %llu B (%llu MB)\n", tot_bytes_written, tot_bytes_written / (1 << 20));
 
@@ -842,106 +789,45 @@ void process_buffer(int stream_idx, char** _p, char** _endp) {
 #endif
             free_blocks.push(sv->bq.front());
             sv->bq.pop();
-            bytes_left[stream_idx] -= (endX[stream_idx] - X[stream_idx]);
-
-            //bytes_left[stream_idx] -= (sv->num_vals_last_block.at(0).first * sizeof(Itemtype));
-
+            bytes_left[stream_idx] -= (sv->num_vals_last_block * sizeof(Itemtype));
+            tot_bytes_read += (sv->num_vals_last_block * sizeof(Itemtype));
 #ifdef DEBUG_PRINT
             printf("          bytes_left[0] = %llu B\n", bytes_left[0]);
             printf("          bytes_left[1] = %llu B\n", bytes_left[1]);
             printf("          bytes_left[2] = %llu B\n", bytes_left[2]);
             printf("          bytes_left[3] = %llu B\n", bytes_left[3]);
 #endif
-            if (bytes_left[stream_idx] > 0 && str_inits[stream_idx] == true)
+            if (/*sv->start_offset + sv->seek_offset < sv->end_offset*/bytes_left[stream_idx] > 0 && str_inits[stream_idx] == true)
             {
-                //sv->num_vals_last_block.erase(sv->num_vals_last_block.begin());
-                //printf("        sv->num_vals_last_block.size() = %d\n", sv->num_vals_last_block.size());
-#ifdef MULTI_DEBUG_PRINT
-                printf("    Refilling... stream = %u\n", stream_idx);
-                printf("        sv->curr_block  = %llu\n", sv->curr_block);
-                printf("        sv->num_blocks  = %llu\n", sv->num_blocks);
-#endif
-                // find the c lowest buckets
-                // pair<index, num_blocks - curr_block>
-                std::vector<pair<unsigned, uint64_t>> c_lowest_bucks = {};
-                std::pair<unsigned, uint64_t> temp(stream_idx, 0);
-                c_lowest_bucks.push_back(temp);
+                num_refills++;
+                LARGE_INTEGER num_bytes_to_move = { 0 };
+                num_bytes_to_move.QuadPart = sv->start_offset + sv->seek_offset;
 
-#ifdef MULTI_DEBUG_PRINT
-                printf("c_lowest_bucks\n");
-#endif
-                //std::vector<unsigned> idxs_included = { (unsigned)stream_idx };
+                LARGE_INTEGER aligned_bytes_to_move = { 0 };
+                aligned_bytes_to_move.QuadPart = (num_bytes_to_move.QuadPart + 511) & (~511);
 
-                // populate the vector first
-                unsigned idx_offset = 0;
-                for (unsigned i = 0; i < int_c - 1; i++) {
-                    if (i == stream_idx) {
-                        idx_offset++;
-                    }
-                    std::pair<unsigned, uint64_t> temp(i + idx_offset, state[i + idx_offset].num_blocks - state[i + idx_offset].curr_block + 1);
-                    c_lowest_bucks.push_back(temp);
-                    //idxs_included.push_back(i + idx_offset);
+                if (num_bytes_to_move.QuadPart % 512 != 0) {
+                    aligned_bytes_to_move.QuadPart -= 512;
                 }
-                for (unsigned i = 0; i < num_chunks; i++)
-                {
-                    if (i != stream_idx) {
-                        unsigned initial_i = i;
-                        uint64_t num_blocks_left = state[i].num_blocks - state[i].curr_block + 1;
-                        if (num_blocks_left == 0) {
-                            printf("LIKELY ERROR: i = %d, num_blocks_left = %llu\n", i, num_blocks_left);
-                            exit(1);
-                        }
-#ifdef MULTI_DEBUG_PRINT
-                        printf("            i = %u\n", i);
-                        printf("                num_blocks_left = %llu\n", num_blocks_left);
-                        printf("                    state[i].num_blocks = %llu\n", state[i].num_blocks);
-                        printf("                    state[i].curr_block = %llu\n", state[i].curr_block);
-                        printf("                    state[i].num_vals_last_block.size() = %llu\n", state[i].num_vals_last_block.size());
-#endif
-                        //bool replaced = false;
-                        // to avoid duplicates
-                        bool already_included = false;
-                        for (unsigned j = 1; j < int_c; j++)
-                        {
-                            if (c_lowest_bucks.at(j).first == i) {
-                                already_included = true;
-                            }
-                        }
-                        if (!already_included) {
-                            for (unsigned j = 1; j < int_c; j++)
-                            {
-                                if (num_blocks_left < c_lowest_bucks.at(j).second && chunk_done[i] == false/* && !replaced*/) {
-#ifdef MULTI_DEBUG_PRINT
-                                    printf("                replacing j = %u, num_blocks@j = %u with i = %u, num_blocks@i = %u\n", j, c_lowest_bucks.at(j).second, i, num_blocks_left);
-#endif
-                                    unsigned prev_j = c_lowest_bucks.at(j).first;
-                                    uint64_t prev_num_blocks = c_lowest_bucks.at(j).second;
-                                    c_lowest_bucks.at(j).first = i;
-                                    c_lowest_bucks.at(j).second = num_blocks_left;
-                                    // need to check if the index just replaced is still among the lowest, so update i to be j for the rest of this i iteration
-                                    // there is likely some cases where this method fails, must check 
-                                    i = prev_j;
-                                    num_blocks_left = prev_num_blocks;
-                                }
-                            }
-                        }
-                        i = initial_i;
-                    }
-                }
-#ifdef MULTI_DEBUG_PRINT
-                printf("    c    = %.2f\n", c);
-                printf("    int_c    = %u\n", int_c);
-                printf("    c_lowest_bucks.size() = %u\n", c_lowest_bucks.size());
-                if (c_lowest_bucks.size() != int_c) {
-                    exit(1);
-                }
-                for (unsigned j = 0; j < c_lowest_bucks.size(); j++)
-                {
-                    printf("    bucket_index    = %u\n", c_lowest_bucks.at(j).first);
-                    printf("        num_blocks_left = %llu\n", c_lowest_bucks.at(j).second);
-                }
-#endif
 
+                tot_bytes_read += (sv->num_vals_last_block * sizeof(Itemtype));
+#ifdef DEBUG_PRINT
+                printf("      tot_bytes_read  = %llu B = %llu MB\n", tot_bytes_read, tot_bytes_read / (1LLU << 20));
+#endif
+                sv->bufsize = (std::min)(largest_chunk, (uint64_t)((sv->end_offset - (sv->start_offset + sv->seek_offset)) / sizeof(Itemtype)));
+                sv->nobuff_bufsize = (static_cast<INT64>(sv->bufsize) + 127) & (~127);
+
+                unsigned long long bytes_to_read = sv->bufsize * sizeof(Itemtype);
+                unsigned long long new_bytes_to_read = ((bytes_to_read + (num_bytes_to_move.QuadPart - aligned_bytes_to_move.QuadPart)) + 511) & (~511);
+
+                // since num_bytes_to_move must be aligned on 512, there's a possibility that the new aligned_bytes_to_move and bytes_to_read wouldn't actually cover the data area
+                // where the desired ints are held. So, may need to read more bytes to new_bytes_to_read to get to the area that holds the ints we care about
+                while (new_bytes_to_read + aligned_bytes_to_move.QuadPart < sv->seek_offset + bytes_to_read) {
+                    new_bytes_to_read += 512;
+                }
+
+                unsigned long long remaining_vals = sv->bufsize;
+                sv->num_blocks = (bytes_to_read % (mem_block_size) == 0) ? (bytes_to_read / (mem_block_size)) : (bytes_to_read / (mem_block_size)+1);
 #ifdef DEBUG_PRINT
                 printf("    bytes_to_read            = %llu\n", bytes_to_read);
                 printf("    new_bytes_to_read        = %llu\n", new_bytes_to_read);
@@ -949,189 +835,73 @@ void process_buffer(int stream_idx, char** _p, char** _endp) {
                 printf("    aligned_bytes_to_move    = %llu\n", aligned_bytes_to_move.QuadPart);
                 printf("    sv->bufsize              = %llu\n", sv->bufsize);
 #endif
-
-                for (unsigned i = 0; i < c_lowest_bucks.size(); i++)
-                {
-                    unsigned ic = c_lowest_bucks.at(i).first;
-#ifdef MULTI_DEBUG_PRINT
-                    printf("    ic       = %u\n", ic);
-#endif
-                    num_refills++;
-                    LARGE_INTEGER num_bytes_to_move = { 0 };
-                    num_bytes_to_move.QuadPart = state[ic].start_offset + state[ic].seek_offset;
-
-                    LARGE_INTEGER aligned_bytes_to_move = { 0 };
-                    aligned_bytes_to_move.QuadPart = (num_bytes_to_move.QuadPart + 511) & (~511);
-
-                    if (num_bytes_to_move.QuadPart % 512 != 0) {
-                        aligned_bytes_to_move.QuadPart -= 512;
-                    }
-
-                    //tot_bytes_read += (state[ic].num_vals_last_block.at(0).first * sizeof(Itemtype));
-
-#ifdef DEBUG_PRINT
-                    printf("      tot_bytes_read  = %llu B = %llu MB\n", tot_bytes_read, tot_bytes_read / (1LLU << 20));
-#endif
-
-#ifdef MULTI_DEBUG_PRINT
-                    printf("        state[ic].bufsize = %llu\n", state[ic].bufsize);
-                    printf("        largest_chunk = %llu\n", largest_chunk);
-                    printf("            state[ic].end_offset = %llu\n", state[ic].end_offset);
-                    printf("            state[ic].start_offset = %llu\n", state[ic].start_offset);
-                    printf("            state[ic].seek_offset = %llu\n", state[ic].seek_offset);
-#endif
-                    state[ic].bufsize = (std::min)(largest_chunk, (uint64_t)((state[ic].end_offset - (state[ic].start_offset + state[ic].seek_offset))));
-#ifdef MULTI_DEBUG_PRINT
-                    printf("        state[ic].bufsize = %llu\n", state[ic].bufsize);
-#endif
-                    state[ic].nobuff_bufsize = (static_cast<INT64>(state[ic].bufsize) + 511) & (~511);
-
-                    unsigned long long bytes_to_read = state[ic].bufsize;
-                    unsigned long long new_bytes_to_read = ((bytes_to_read + (num_bytes_to_move.QuadPart - aligned_bytes_to_move.QuadPart)) + 511) & (~511);
-
-                    while (new_bytes_to_read + aligned_bytes_to_move.QuadPart < state[ic].seek_offset + bytes_to_read) {
-                        new_bytes_to_read += 512;
-                    }
-                    uint64_t new_num_blocks = (bytes_to_read % (mem_block_size) == 0) ? (bytes_to_read / (mem_block_size)) : (bytes_to_read / (mem_block_size)+1);
-
-                    unsigned long long remaining_vals = state[ic].bufsize / sizeof(Itemtype);
-                    HANDLE curr_f = fp[ic];
-                    hrc::time_point s, e;
-                    s = hrc::now();
-                    DWORD num_moved = SetFilePointer(curr_f, aligned_bytes_to_move.LowPart, &aligned_bytes_to_move.HighPart, FILE_BEGIN);
-                    if (num_moved == INVALID_SET_FILE_POINTER) {
-                        printf("%s: Failed setting file pointer in populated file with %d\n", __FUNCTION__, GetLastError());
-                        exit(1);
-                    }
-                    nseeks++;
-
-#ifdef MULTI_DEBUG_PRINT
-                    printf("            state[ic].num_blocks = %llu\n", state[ic].num_blocks);
-                    printf("            state[ic].curr_block = %llu\n", state[ic].curr_block);
-#endif
-
-                    e = hrc::now();
-                    double el = ELAPSED_MS(s, e);
-                    glb_populate_duration += (el / 1000);
-                    uint64_t last_curr_block = state[ic].curr_block;
-
-                    state[ic].curr_block = 1;
-                    //state[ic].num_blocks = state[ic].num_blocks - last_curr_block + new_num_blocks;
-                    //state[ic].num_blocks += c_lowest_bucks.at(i).second;
-
-                    state[ic].num_blocks = new_num_blocks + c_lowest_bucks.at(i).second;
-                    state[ic].seek_offset += bytes_to_read;
-                    // had to change num_vals_last_block from a queue to a vector so I can iterate through everything and update all the val's second pair
-                    if (state[ic].num_vals_last_block.size() > 0) {
-                        for (unsigned int idx = 0; idx < state[ic].num_vals_last_block.size(); idx++)
-                        {
-                            //printf("                idx     = %d\n", idx);
-                            state[ic].num_vals_last_block.at(idx).second = state[ic].num_vals_last_block.at(idx).second - last_curr_block + 1;
-                        }
-                    }
-                    pair<uint64_t, unsigned> temp_pair;
-                    temp_pair.first = populate_blocks((unsigned)ic, remaining_vals, remaining_vals, &curr_f, new_num_blocks);
-                    temp_pair.second = state[ic].num_blocks;
-                    state[ic].num_vals_last_block.push_back(temp_pair);
-
-#ifdef MULTI_DEBUG_PRINT
-                    printf("                last_curr_block     = %llu\n", last_curr_block);
-                    printf("                state[ic].num_vals_last_block.size() = %llu\n", state[ic].num_vals_last_block.size());
-                    printf("                state[ic].num_blocks = %llu\n", state[ic].num_blocks);
-                    printf("                state[ic].curr_block = %llu\n", state[ic].curr_block);
-                    printf("                    bytes_left[0] = %llu B\n", bytes_left[0]);
-                    printf("                    bytes_left[1] = %llu B\n", bytes_left[1]);
-                    printf("                    bytes_left[2] = %llu B\n", bytes_left[2]);
-                    printf("                    bytes_left[3] = %llu B\n", bytes_left[3]);
-#endif
-
-
-#ifdef DEBUG_PRINT
-                    printf("    in_buf_size    = %llu\n", in_buf_size);
-                    printf("    remaining_vals = %llu\n", remaining_vals);
-                    printf("    mem_block_size = %llu\n", mem_block_size);
-                    printf("        &state[0].num_blocks = %llu\n", (&state[0])->num_blocks);
-                    printf("        &state[1].num_blocks = %llu\n", (&state[1])->num_blocks);
-                    printf("        &state[2].num_blocks = %llu\n", (&state[2])->num_blocks);
-                    printf("        &state[3].num_blocks = %llu\n", (&state[3])->num_blocks);
-                    printf("        oldX = %llu\n", p);
-#endif          
-
-#ifdef MULTI_DEBUG_PRINT
-                    printf("        new_num_blocks      = %llu\n", new_num_blocks);
-                    printf("        state[ic].num_blocks = %llu\n", state[ic].num_blocks);
-                    printf("        state[ic].curr_block = %llu\n", state[ic].curr_block);
-                    printf("        oldX = %llu\n", X[ic]);
-                    printf("        endX = %llu\n", endX[ic]);
-                    printf("        endX - newX = %llu\n", endX[ic] - X[ic]);
-#endif
-
-                    // only need to update pointers on the bucket that was empty. The other buckets still need to have the rest of their values read from their current block
-                    if (ic == stream_idx)
-                    {
-                        // now must set the appropriate info
-                        unsigned long long remaining_vals = state[ic].bufsize / sizeof(Itemtype);
-                        ui64 in_buf_size = (std::min)(mem_block_size, remaining_vals * sizeof(Itemtype));
-
-                        X[ic] = (char*)state[ic].bq.front();
-                        endX[ic] = (char*)state[ic].bq.front() + in_buf_size;
-#ifdef DEBUG_PRINT
-                        printf("        newX = %llu\n", X[ic]);
-                        printf("        endX = %llu\n", endX[ic]);
-                        printf("        endX - newX = %llu\n", endX[ic] - X[ic]);
-#endif
-
-                        * _p = X[ic];
-                        *_endp = endX[ic];
-#ifdef DEBUG_PRINT
-                        printf("          bytes_left[0] = %llu MB\n", bytes_left[0] / (1LLU << 20));
-                        printf("          bytes_left[1] = %llu MB\n", bytes_left[1] / (1LLU << 20));
-                        printf("          bytes_left[2] = %llu MB\n", bytes_left[2] / (1LLU << 20));
-                        printf("          bytes_left[3] = %llu MB\n", bytes_left[3] / (1LLU << 20));
-                        printf("          bytes_left[0] = %llu B\n", bytes_left[0]);
-                        printf("          bytes_left[1] = %llu B\n", bytes_left[1]);
-                        printf("          bytes_left[2] = %llu B\n", bytes_left[2]);
-                        printf("          bytes_left[3] = %llu B\n", bytes_left[3]);
-
-                        printf("             stream_idx = %llu\n", stream_idx);
-                        //printf("             old_last_bytes = %llu\n", old_last_bytes);
-                        printf("             sv->num_vals_last_block = %llu\n", sv->num_vals_last_block);
-                        //bytes_left[stream_idx] -= (std::min)(mem_block_size, old_last_vals * sizeof(Itemtype));
-                        //bytes_left[stream_idx] -= old_last_bytes;
-                        printf("          bytes_left[stream_idx] = %llu\n", bytes_left[stream_idx]);
-                        printf("            X[stream_idx][0] = %u\n", *((Itemtype*)X[stream_idx]));
-                        printf("            X[stream_idx][1] = %u\n", *((Itemtype*)X[stream_idx] + 1));
-                        printf("            X[stream_idx][2] = %u\n", *((Itemtype*)X[stream_idx] + 2));
-                        printf("            X[1][0] = %u\n", *((Itemtype*)X[1]));
-                        printf("            X[1][1] = %u\n", *((Itemtype*)X[1] + 1));
-                        printf("            X[1][2] = %u\n", *((Itemtype*)X[1] + 2));
-                        printf("            X[2][0] = %u\n", *((Itemtype*)X[2]));
-                        printf("            X[2][1] = %u\n", *((Itemtype*)X[2] + 1));
-                        printf("            X[2][2] = %u\n", *((Itemtype*)X[2] + 2));
-                        printf("            X[3][0] = %u\n", *((Itemtype*)X[3]));
-                        printf("            X[3][1] = %u\n", *((Itemtype*)X[3] + 1));
-                        printf("            X[3][2] = %u\n", *((Itemtype*)X[3] + 2));
-#endif
-
-#ifdef MULTI_DEBUG_PRINT
-                        printf("        newX = %llu\n", X[ic]);
-                        printf("        endX = %llu\n", endX[ic]);
-                        printf("        endX - newX = %llu\n", endX[ic] - X[ic]);
-#endif
-                    }
-
+                DWORD num_moved = SetFilePointer(f, aligned_bytes_to_move.LowPart, &aligned_bytes_to_move.HighPart, FILE_BEGIN);
+                if (num_moved == INVALID_SET_FILE_POINTER) {
+                    printf("%s: Failed setting file pointer in populated file with %d\n", __FUNCTION__, GetLastError());
+                    exit(1);
                 }
-#ifdef MULTI_DEBUG_PRINT
-                for (int j = 0; j < num_chunks; j++) {
-                    printf("    j = %u\n", j);
-                    printf("        state[j].num_blocks = %u\n", state[j].num_blocks);
-                    printf("        state[j].curr_block = %u\n", state[j].curr_block);
-                    for (int m = 0; m < state[j].num_vals_last_block.size(); m++) {
-                        printf("        state[j].num_vals_last_block.size() = %u\n", state[j].num_vals_last_block.size());
-                        printf("            state[j].num_vals_last_block.at(m).first  = %u\n", state[j].num_vals_last_block.at(m).first);
-                        printf("            state[j].num_vals_last_block.at(m).second = %u\n", state[j].num_vals_last_block.at(m).second);
-                    }
-                }
+                nseeks++;
+                //unsigned long long old_last_bytes = sv->num_vals_last_block * sizeof(Itemtype);
+
+                hrc::time_point s, e;
+                s = hrc::now();
+                sv->num_vals_last_block = populate_blocks((unsigned)stream_idx, remaining_vals, remaining_vals/*new_bytes_to_read / sizeof(Itemtype)*/, &f);
+                e = hrc::now();
+                double el = ELAPSED_MS(s, e);
+                glb_populate_duration += (el / 1000);
+
+                sv->seek_offset += bytes_to_read;
+                sv->curr_block = 1;
+
+                ui64 in_buf_size = (std::min)(mem_block_size, remaining_vals * sizeof(Itemtype));
+#ifdef DEBUG_PRINT
+                printf("    in_buf_size    = %llu\n", in_buf_size);
+                printf("    remaining_vals = %llu\n", remaining_vals);
+                printf("    mem_block_size = %llu\n", mem_block_size);
+                printf("        &state[0].num_blocks = %llu\n", (&state[0])->num_blocks);
+                printf("        &state[1].num_blocks = %llu\n", (&state[1])->num_blocks);
+                printf("        &state[2].num_blocks = %llu\n", (&state[2])->num_blocks);
+                printf("        &state[3].num_blocks = %llu\n", (&state[3])->num_blocks);
+                printf("        oldX = %llu\n", p);
+#endif
+                // now must set the appropriate info
+                X[stream_idx] = (char*)state[stream_idx].bq.front();
+                endX[stream_idx] = (char*)state[stream_idx].bq.front() + in_buf_size;
+#ifdef DEBUG_PRINT
+                printf("        newX = %llu\n", X[stream_idx]);
+                printf("        endX = %llu\n", endX[stream_idx]);
+                printf("        endX - newX = %llu\n", endX[stream_idx] - X[stream_idx]);
+#endif
+                * _p = X[stream_idx];
+                *_endp = endX[stream_idx];
+#ifdef DEBUG_PRINT
+                printf("          bytes_left[0] = %llu MB\n", bytes_left[0] / (1LLU << 20));
+                printf("          bytes_left[1] = %llu MB\n", bytes_left[1] / (1LLU << 20));
+                printf("          bytes_left[2] = %llu MB\n", bytes_left[2] / (1LLU << 20));
+                printf("          bytes_left[3] = %llu MB\n", bytes_left[3] / (1LLU << 20));
+                printf("          bytes_left[0] = %llu B\n", bytes_left[0]);
+                printf("          bytes_left[1] = %llu B\n", bytes_left[1]);
+                printf("          bytes_left[2] = %llu B\n", bytes_left[2]);
+                printf("          bytes_left[3] = %llu B\n", bytes_left[3]);
+
+                printf("             stream_idx = %llu\n", stream_idx);
+                //printf("             old_last_bytes = %llu\n", old_last_bytes);
+                printf("             sv->num_vals_last_block = %llu\n", sv->num_vals_last_block);
+                //bytes_left[stream_idx] -= (std::min)(mem_block_size, old_last_vals * sizeof(Itemtype));
+                //bytes_left[stream_idx] -= old_last_bytes;
+                printf("          bytes_left[stream_idx] = %llu\n", bytes_left[stream_idx]);
+                printf("            X[stream_idx][0] = %u\n", *((Itemtype*)X[stream_idx]));
+                printf("            X[stream_idx][1] = %u\n", *((Itemtype*)X[stream_idx] + 1));
+                printf("            X[stream_idx][2] = %u\n", *((Itemtype*)X[stream_idx] + 2));
+                printf("            X[1][0] = %u\n", *((Itemtype*)X[1]));
+                printf("            X[1][1] = %u\n", *((Itemtype*)X[1] + 1));
+                printf("            X[1][2] = %u\n", *((Itemtype*)X[1] + 2));
+                printf("            X[2][0] = %u\n", *((Itemtype*)X[2]));
+                printf("            X[2][1] = %u\n", *((Itemtype*)X[2] + 1));
+                printf("            X[2][2] = %u\n", *((Itemtype*)X[2] + 2));
+                printf("            X[3][0] = %u\n", *((Itemtype*)X[3]));
+                printf("            X[3][1] = %u\n", *((Itemtype*)X[3] + 1));
+                printf("            X[3][2] = %u\n", *((Itemtype*)X[3] + 2));
 #endif
             }
             else if (bytes_left[stream_idx] == 0 && str_inits[stream_idx] == true) {
@@ -1141,7 +911,6 @@ void process_buffer(int stream_idx, char** _p, char** _endp) {
 #endif
                 * _p = X[stream_idx];
                 *_endp = X[stream_idx];
-                chunk_done[stream_idx] = true;
             }
             else {
                 printf("    %s: probable error", __FUNCTION__);
@@ -1151,65 +920,30 @@ void process_buffer(int stream_idx, char** _p, char** _endp) {
         // not in last block
         else if (sv->curr_block != sv->num_blocks && bytes_left[stream_idx] > 0 && str_inits[stream_idx] == true)
         {
-            /*if (tot_bytes_written > 52613349376 && stream_idx == 11) {
-                printf("        stream 11 touched\n");
-            }*/
             free_blocks.push(sv->bq.front());
             sv->bq.pop();
-            ui64 in_buf_size = mem_block_size;
-            ui64 next_block_end = mem_block_size;
             sv->curr_block++;
-            if (sv->curr_block == sv->num_blocks || sv->curr_block == sv->num_vals_last_block.at(0).second) {
-#ifdef MULTI_DEBUG_PRINT
-                printf("CCCC Happened\n");
-                printf("    sv->curr_block = %u\n", sv->curr_block);
-                printf("    sv->num_blocks = %u\n", sv->num_blocks);
-                printf("            sv->num_vals_last_block.front().first  = %llu\n", sv->num_vals_last_block.front().first);
-                printf("            sv->num_vals_last_block.front().second = %llu\n", sv->num_vals_last_block.front().second);
-#endif
+            //sv->bufsize -= (mem_block_size / sizeof(Itemtype));
+            //ui64 in_buf_size = (std::min)((unsigned long long)mem_block_size, sv->bufsize * sizeof(Itemtype));
+            ui64 in_buf_size = mem_block_size;
+            if (sv->curr_block == sv->num_blocks)
+                in_buf_size = sv->num_vals_last_block * sizeof(Itemtype);
+            /*if (sv->curr_block == sv->num_blocks)
+            {
+                printf("here");
+                in_buf_size = (std::min)(in_buf_size, sv->num_vals_last_block * sizeof(Itemtype));
+                printf("    in_buf_size = %llu\n", in_buf_size);
+            }*/
 
-                //in_buf_size = sv->num_vals_last_block.at(0).first * sizeof(Itemtype);
-                next_block_end = sv->num_vals_last_block.at(0).first * sizeof(Itemtype);
-                sv->num_vals_last_block.erase(sv->num_vals_last_block.begin());
-
-#ifdef MULTI_DEBUG_PRINT
-                printf("        stream = %llu\n", stream_idx);
-                printf("        in_buf_size    = %llu\n", in_buf_size);
-                printf("        next_block_end = %llu\n", next_block_end);
-                printf("          bytes_left[stream_idx] = %llu B\n", bytes_left[stream_idx]);
-                printf("          sv->num_vals_last_block.front().first  = %llu\n", sv->num_vals_last_block.front().first);
-                printf("          sv->num_vals_last_block.front().second = %llu\n", sv->num_vals_last_block.front().second);
-#endif
-            }
-            //            if (sv->curr_block - 1 == sv->num_vals_last_block.at(0).second) {
-            //                in_buf_size = sv->num_vals_last_block.at(0).first * sizeof(Itemtype);
-            //                // before subtracting, check if the current block that was just used was connected to a previous block that wasn't completely filled initially
-            //#ifdef MULTI_DEBUG_PRINT
-            //                printf("AAAA Happened\n");
-            //#endif
-            //#ifdef MULTI_DEBUG_PRINT
-            //                printf("                stream_idx                             = %u\n", stream_idx);
-            //                printf("                sv->curr_block                         = %llu\n", sv->curr_block);
-            //                //printf("                sv->num_vals_last_block.at(0).second = %llu\n", sv->num_vals_last_block.at(0).second);
-            //                for (int j = 0; j < num_chunks; j++) {
-            //                    printf("    j = %u\n", j);
-            //                    for (int m = 0; m < state[j].num_vals_last_block.size(); m++) {
-            //                        printf("        state[j].num_vals_last_block.size() = %u\n", state[j].num_vals_last_block.size());
-            //                        printf("            state[j].num_vals_last_block.at(m).first  = %u\n", state[j].num_vals_last_block.at(m).first);
-            //                        printf("            state[j].num_vals_last_block.at(m).second = %u\n", state[j].num_vals_last_block.at(m).second);
-            //                    }
-            //                }
-            //#endif
-            //            }
-            bytes_left[stream_idx] -= (endX[stream_idx] - X[stream_idx]);
-
+            // now must set the appropriate info
+            //printf("  stream = %u, in_buf_size = %llu  ", stream_idx, in_buf_size);
+            //printf("  sv->bufsize = %llu  ", sv->bufsize);
             X[stream_idx] = (char*)state[stream_idx].bq.front();
-            endX[stream_idx] = (char*)state[stream_idx].bq.front() + next_block_end;
+            endX[stream_idx] = (char*)state[stream_idx].bq.front() + in_buf_size;
             *_p = X[stream_idx];
             *_endp = endX[stream_idx];
-            //bytes_left[stream_idx] -= in_buf_size;
-
-            //printf("sv->num_vals_last_block.front().second = %llu\n", sv->num_vals_last_block.front().second);
+            bytes_left[stream_idx] -= mem_block_size;
+            tot_bytes_read += mem_block_size;
         }
         else {
 #ifdef DEBUG_PRINT
@@ -1217,13 +951,8 @@ void process_buffer(int stream_idx, char** _p, char** _endp) {
 #endif
             str_inits[stream_idx] = true;
             ui64 in_buf_size = mem_block_size;
-
-
-            if (sv->curr_block == sv->num_blocks) {
-                in_buf_size = sv->num_vals_last_block.at(0).first * sizeof(Itemtype);
-                sv->num_vals_last_block.erase(sv->num_vals_last_block.begin());
-            }
-
+            if (sv->curr_block == sv->num_blocks)
+                in_buf_size = sv->num_vals_last_block * sizeof(Itemtype);
             X[stream_idx] = (char*)state[stream_idx].bq.front();
             endX[stream_idx] = (char*)state[stream_idx].bq.front() + in_buf_size;
             *_p = X[stream_idx];
@@ -1246,7 +975,7 @@ void external_sort::init_buffers(char* buf) {
         char* p = (char*)state[i].bq.front();
         ui64 in_buf_size = mem_block_size;
         if (state[i].curr_block == state[i].num_blocks)
-            in_buf_size = state[i].num_vals_last_block.at(0).first * sizeof(Itemtype);
+            in_buf_size = state[i].num_vals_last_block * sizeof(Itemtype);
         X[i] = p;
         endX[i] = p + in_buf_size;
     }
@@ -1271,6 +1000,18 @@ void external_sort::init_buffers(char* buf) {
 
 int external_sort::merge_sort()
 {
+    /*
+        Merge sort Version 1 Steps (i.e., all sizes line up for an easy implementation)
+        1)  Create an array of size num_chunks of MinHeapNodes and an array of size 1GB
+                i)  Populate the 1GB array with the first n vals from each chunk
+        2)  Create MinHeapNodes with the first val from every chunk (now taken from the 1GB array) and insert into array
+        3)  Create MinHeap from the array
+        4)  While the MinHeap is not empty:
+                While the buffersize array is not full:
+                    i)  Pop heap and take the val from that node and append it to the buffersize array
+                Write buffersize array to the end of the file and "empty" it
+    */
+    //#define MERGE_DEBUG
     printf("\n%s\n", __FUNCTION__);
     num_chunks = (this->file_size % this->chunk_size == 0) ? (this->file_size / this->chunk_size) : ((this->file_size / this->chunk_size) + 1);
     printf("    num_chunks = %llu\n", num_chunks);
@@ -1447,85 +1188,36 @@ int external_sort::merge_sort()
 
         unsigned long long total_bytes_touched = 0;
         DWORD num_bytes_touched;
-        z.clear();
-        c = sqrt(num_chunks);
-        // eventually, int_c will just be the floor and not be rounded down to the last power of 2. 
-        int_c = floor(c);
-        if (c - int_c > 0.0001)
-        {
-            unsigned power = 1;
-            while (power <= int_c)
-            {
-                power *= 2;
-            }
-            int_c = power >> 1;
-        }
 
-        printf("    c              = %.2f\n", c);
-        printf("    int_c          = %u\n", int_c);
-        printf("    num_chunks / c = %.2f\n", 1.0 * (num_chunks / c));
-        printf("    num_chunks / c = %u\n", floor(num_chunks / c));
-        extra_empty_streams = int_c - (num_chunks % int_c);
-        printf("    extra_empty_streams = %u\n", extra_empty_streams);
-
-
-        unsigned long long tot_bytes_from_delta = 0;
-        for (int i = 0; i < floor(num_chunks / int_c); i++)
-        {
-            double mem = 2 * this->merge_mem_avail;
-            double den1 = 1.0 * num_chunks / int_c + 1;
-            double frac = 1.0 * i * int_c / num_chunks;
-            //double temp1 = (mem / den1) * (1 - frac);
-            uint64_t temp = (mem / den1) * (1 - frac);
-            temp -= temp % this->bytes_per_sector;
-            //temp -= temp % this->bytes_per_sector;
-            temp += (1LLU * num_chunks * 512);
-            z.push_back(temp);
-            printf("    group %d: %llu MB\n", i, temp / (1LLU << 20));
-            tot_bytes_from_delta += z.at(i);
-        }
-
+        //unsigned long long delta = 0;
+        //unsigned long long largest_chunk = 0;
+        delta = (2 * (this->merge_mem_avail / sizeof(Itemtype)) / (num_chunks * (num_chunks + 1)));
 #ifdef MERGE_DEBUG
         printf("    Number of chunks  = %llu\n", num_chunks);
         printf("       this->merge_mem_avail  = %llu MB\n", this->merge_mem_avail / (1LLU << 20));
 #endif
-
+        //printf("       delta          = %llu vals (%llu MB)\n", delta, delta * sizeof(Itemtype) / (1LLU << 20));
+        //delta -= (sizeof(Regtype) / sizeof(Itemtype) - (delta % (sizeof(Regtype) / sizeof(Itemtype))));
+        //delta -= delta % (sizeof(Regtype) / sizeof(Itemtype));
+        delta -= delta % this->bytes_per_sector;
+        //delta += (4LLU * 512);
+        delta += (1LLU * 512);
+#ifdef MERGE_DEBUG
+        printf("       delta          = %llu vals (%llu MB)\n", delta, delta * sizeof(Itemtype) / (1LLU << 20));
+#endif
+        largest_chunk = num_chunks * delta;
 
 #ifdef MERGE_DEBUG
         printf("       largest_chunk  = %llu vals (%llu MB)\n", largest_chunk, largest_chunk * sizeof(Itemtype) / (1LLU << 20));
 #endif
-        printf("       tot_bytes_from_delta  = %llu MB (%llu B)\n", tot_bytes_from_delta / (1LLU << 20), tot_bytes_from_delta);
-        printf("       percent  = %.2f\n", static_cast<double>(tot_bytes_from_delta) / this->merge_mem_avail);
-        printf("        int_c = %u\n", int_c);
-        if (static_cast<double>(tot_bytes_from_delta) / this->merge_mem_avail > 1.2) { exit(1); }
 
-        unsigned running_c = 0;
-        vector<uint64_t> z_indiv;
-        unsigned z_idx = 0;
-        for (int i = 0; i < num_chunks; i++)
+        unsigned long long tot_bytes_from_delta = 0;
+        for (unsigned int i = 0; i < num_chunks; i++)
         {
-            uint64_t temp = z.at(z_idx) / int_c;
-            temp -= temp % this->bytes_per_sector;
-            z_indiv.push_back(temp);
-            running_c++;
-            if (running_c % int_c == 0)
-            {
-                running_c = 0;
-                z_idx++;
-            }
-#ifdef MULTI_DEBUG_PRINT
-            printf("    z_indiv.size() = %u\n", z_indiv.size());
-            printf("    z_idx = %u\n", z_idx);
-#endif
+            tot_bytes_from_delta += (static_cast<unsigned long long>(i) + 1) * delta;
         }
+        printf("       tot_bytes_from_delta  = %llu MB\n", tot_bytes_from_delta / (1LLU << 20));
 
-        largest_chunk = z_indiv.at(0);
-#ifdef MULTI_DEBUG_PRINT
-        for (int i = 0; i < num_chunks; i++)
-        {
-            printf("    bucket %d: %llu MB\n", i, z_indiv.at(i) / (1LLU << 20));
-        }
-#endif
         //Itemtype* sorted_num_buffer = (Itemtype*)_aligned_malloc(this->write_buffer_size * sizeof(Itemtype), this->bytes_per_sector);
         INT64 running_file_offset = 0;
 
@@ -1555,9 +1247,9 @@ int external_sort::merge_sort()
                 // end of the whole chunk in the file (equivalent to the start of the next chunk, if it exists)
                 new_chunk.end_offset = (running_file_offset + new_chunk.chunk_size) * sizeof(Itemtype);
                 // how big a portion this chunk gets in memory (not necessarilly contiguous)
-                new_chunk.bufsize = (std::min)(z_indiv.at(i), new_chunk.end_offset - new_chunk.start_offset);
+                new_chunk.bufsize = (std::min)((INT64)(delta * (static_cast<unsigned long long>(i) + 1)), (INT64)((new_chunk.end_offset - new_chunk.start_offset) / sizeof(Itemtype)));
                 // next place in the file to start the next seek from the start_offset
-                new_chunk.seek_offset = (std::min)(new_chunk.bufsize, new_chunk.end_offset - new_chunk.start_offset);
+                new_chunk.seek_offset = (std::min)(new_chunk.bufsize * sizeof(Itemtype), new_chunk.end_offset - new_chunk.start_offset);
             }
             else {
                 // start of the whole chunk in the file
@@ -1565,14 +1257,14 @@ int external_sort::merge_sort()
                 // end of the whole chunk in the file (equivalent to the start of the next chunk, if it exists)
                 new_chunk.end_offset = this->windows_fs.QuadPart + (running_file_offset + new_chunk.chunk_size) * sizeof(Itemtype);
                 // how big a portion this chunk gets in memory (not necessarilly contiguous)
-                new_chunk.bufsize = (std::min)(z_indiv.at(i), new_chunk.end_offset - new_chunk.start_offset);
+                new_chunk.bufsize = (std::min)((INT64)(delta * (static_cast<unsigned long long>(i) + 1)), (INT64)((new_chunk.end_offset - new_chunk.start_offset) / sizeof(Itemtype)));
                 // next place in the file to start the next seek from the start_offset
-                new_chunk.seek_offset = /*this->windows_fs.QuadPart + */(std::min)(new_chunk.bufsize, new_chunk.end_offset - new_chunk.start_offset);
+                new_chunk.seek_offset = /*this->windows_fs.QuadPart + */(std::min)(new_chunk.bufsize * sizeof(Itemtype), new_chunk.end_offset - new_chunk.start_offset);
             }
-            new_chunk.nobuff_bufsize = (static_cast<UINT64>(new_chunk.bufsize) + 511) & (~511);
+            new_chunk.nobuff_bufsize = (static_cast<INT64>(new_chunk.bufsize) + 127) & (~127);
 
             // each chunk's portion of the memory is made out of blocks, which are 1 MB sizes of memory linked together in a queue
-            new_chunk.num_blocks = (new_chunk.bufsize % (this->block_size) == 0) ? (new_chunk.bufsize / (this->block_size)) : (new_chunk.bufsize / (this->block_size) + 1);
+            new_chunk.num_blocks = (new_chunk.bufsize * sizeof(Itemtype) % (this->block_size) == 0) ? (new_chunk.bufsize * sizeof(Itemtype) / (this->block_size)) : (new_chunk.bufsize * sizeof(Itemtype) / (this->block_size) + 1);
 #ifdef MERGE_DEBUG
             printf("  i = %u\n", i);
             printf("    new_chunk.num_blocks = %llu\n", new_chunk.num_blocks);
@@ -1688,7 +1380,7 @@ int external_sort::merge_sort()
             // don't read values into an intermediate buffer, can just read them directly into the allocated memory blocks
             //read_into_buffer(&chunk_sorted_file, rbuff, tot_bytes);
 
-            unsigned long long bytes_to_read = state[i].bufsize;
+            unsigned long long bytes_to_read = state[i].bufsize * sizeof(Itemtype);
             unsigned long long new_bytes_to_read = ((bytes_to_read + (num_bytes_to_move.QuadPart - aligned_bytes_to_move.QuadPart)) + 511) & (~511);
 
             // since num_bytes_to_move must be aligned on 512, there's a possibility that the new aligned_bytes_to_move and bytes_to_read wouldn't actually cover the data area
@@ -1696,7 +1388,7 @@ int external_sort::merge_sort()
             while (new_bytes_to_read + aligned_bytes_to_move.QuadPart < state[i].seek_offset + bytes_to_read) {
                 new_bytes_to_read += 512;
             }
-            unsigned long long remaining_vals = (std::min)(state[i].bufsize, state[i].nobuff_bufsize) / sizeof(Itemtype);
+            unsigned long long remaining_vals = (std::min)(state[i].bufsize, state[i].nobuff_bufsize);
 #ifdef DEBUG_PRINT
             printf("        remaining_vals        = %llu\n", remaining_vals);
             printf("        new_bytes_to_read     = %llu\n", new_bytes_to_read / sizeof(Itemtype));
@@ -1705,10 +1397,7 @@ int external_sort::merge_sort()
 #endif
             hrc::time_point s, e;
             s = hrc::now();
-            pair<uint64_t, unsigned> temp;
-            temp.first = populate_blocks(i, remaining_vals, new_bytes_to_read / sizeof(Itemtype), &chunk_sorted_file, state[i].num_blocks);
-            temp.second = state[i].num_blocks;
-            state[i].num_vals_last_block.push_back(temp);
+            state[i].num_vals_last_block = populate_blocks(i, remaining_vals, new_bytes_to_read / sizeof(Itemtype), &chunk_sorted_file);
             e = hrc::now();
             double el = ELAPSED_MS(s, e);
             glb_populate_duration += (el / 1000);
@@ -1721,22 +1410,14 @@ int external_sort::merge_sort()
             unsigned long long remaining = 1;
             hrc::time_point s, e;
             s = hrc::now();
-            pair<uint64_t, unsigned> temp1;
-            temp1.first = 0;
-            temp1.second = 0;
-            pair<uint64_t, unsigned> temp2;
-            temp2.first = 0;
-            temp2.second = 0;
-            //state[2].num_vals_last_block.push(populate_blocks(2, remaining, remaining, nullptr, 0));
-            //state[3].num_vals_last_block.push(populate_blocks(3, remaining, remaining, nullptr, 0));
-            state[2].num_vals_last_block.push_back(temp1);
-            state[3].num_vals_last_block.push_back(temp2);
+            state[2].num_vals_last_block = populate_blocks(2, remaining, remaining, nullptr);
+            state[3].num_vals_last_block = populate_blocks(3, remaining, remaining, nullptr);
             e = hrc::now();
             double el = ELAPSED_MS(s, e);
             glb_populate_duration += (el / 1000);
         }
 
-#ifdef MULTI_DEBUG_PRINT
+#ifdef MERGE_DEBUG
         for (unsigned int i = 0; i < num_chunks; i += 1) {
             printf("    i = %u\n", i);
             printf("      this->state[i].num_blocks = %llu\n", state[i].num_blocks);
@@ -1774,7 +1455,6 @@ int external_sort::merge_sort()
                 bytes_left[i] = (std::min)(tot_bytes, this->chunk_size * sizeof(Itemtype));
                 tot_bytes -= (this->chunk_size * sizeof(Itemtype));
                 str_inits[i] = false;
-                chunk_done[i] = false;
             }
 
             if (two_real_chunks) {
@@ -1832,32 +1512,22 @@ int external_sort::merge_sort()
             hrc::time_point s, e;
             //using Reg = REG_TYPE;
             //using Item = Itemtype;
-#ifdef MULTI_DEBUG_PRINT
+#ifdef MERGE_DEBUG
             printf("          bytes_left[0] = %llu MB\n", bytes_left[0] / (1LLU << 20));
             printf("          bytes_left[1] = %llu MB\n", bytes_left[1] / (1LLU << 20));
             printf("          bytes_left[2] = %llu MB\n", bytes_left[2] / (1LLU << 20));
             printf("          bytes_left[3] = %llu MB\n", bytes_left[3] / (1LLU << 20));
-            /*printf("          bytes_left[0] = %llu B\n", bytes_left[0]);
+            printf("          bytes_left[0] = %llu B\n", bytes_left[0]);
             printf("          bytes_left[1] = %llu B\n", bytes_left[1]);
             printf("          bytes_left[2] = %llu B\n", bytes_left[2]);
-            printf("          bytes_left[3] = %llu B\n", bytes_left[3]);*/
+            printf("          bytes_left[3] = %llu B\n", bytes_left[3]);
 #endif
 
 #ifdef DEBUG_PRINT
-            printf("            state[0].num_vals_last_block.front.first = %llu B\n", state[0].num_vals_last_block.front().first * sizeof(Itemtype));
-            printf("            state[1].num_vals_last_block.front.first = %llu B\n", state[1].num_vals_last_block.front().first * sizeof(Itemtype));
-            printf("            state[2].num_vals_last_block.front.first = %llu B\n", state[2].num_vals_last_block.front().first * sizeof(Itemtype));
-            printf("            state[3].num_vals_last_block.front.first = %llu B\n", state[3].num_vals_last_block.front().first * sizeof(Itemtype));
-#endif
-#ifdef MULTI_DEBUG_PRINT
-            for (int j = 0; j < num_chunks; j++) {
-                printf("    j = %u\n", j);
-                for (int m = 0; m < state[j].num_vals_last_block.size(); m++) {
-                    printf("        state[j].num_vals_last_block.size() = %u\n", state[j].num_vals_last_block.size());
-                    printf("            state[j].num_vals_last_block.front().first  = %u\n", state[j].num_vals_last_block.front().first);
-                    printf("            state[j].num_vals_last_block.front().second = %u\n", state[j].num_vals_last_block.front().second);
-                }
-            }
+            printf("            state[0].num_vals_last_block = %llu B\n", state[0].num_vals_last_block * sizeof(Itemtype));
+            printf("            state[1].num_vals_last_block = %llu B\n", state[1].num_vals_last_block * sizeof(Itemtype));
+            printf("            state[2].num_vals_last_block = %llu B\n", state[2].num_vals_last_block * sizeof(Itemtype));
+            printf("            state[3].num_vals_last_block = %llu B\n", state[3].num_vals_last_block * sizeof(Itemtype));
 #endif
             printf("    Written: 0 B (0 MB)");
             s = hrc::now();

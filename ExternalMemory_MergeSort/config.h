@@ -113,8 +113,8 @@ using Itemtype = ui;
 #define _P3_MERGE_NREG_1x	2
 #define _P3_MERGE_NREG_2x	2
 #define _P3_MERGE_NREG_3x	1
-#define _MT_L1_BUFF_N		4096
-#define _MT_L2_BUFF_N		4096
+#define _MT_L1_BUFF_N		1024//4096
+#define _MT_L2_BUFF_N		1024//4096
 #define _MTREE_NREG			2
 
 #elif KEY_TYPE == 1
