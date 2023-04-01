@@ -146,7 +146,7 @@ void sort_bench(ui writer_type, int argc, char** argv) {
 int main(int argc, char** argv) {
 
 	// single thread sort test
-	sort_bench<Regtype, Itemtype>(MT, argc, argv);
+	sort_bench<Regtype, Itemtype>(FIB_SEQ, argc, argv);
 	system("pause");
 
 	return 0;

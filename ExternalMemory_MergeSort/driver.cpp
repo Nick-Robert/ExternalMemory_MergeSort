@@ -36,7 +36,7 @@ int main(int argc, char** argv)
     char fname[] = "D:\\output_files\\test.bin";
     char chunk_sorted_fname[] = "D:\\output_files\\sorted_test.bin";
     char full_sorted_fname[] = "D:\\output_files\\merge_test.bin";
-    char metric_file_fname[] = "D:\\output_files\\BENCH_origami_external_6TB_multifill_2limited_bigdata-compare_2GB-mem-1TB-file.csv";
+    char metric_file_fname[] = "D:\\output_files\\BENCH_origami_external_6TB_multifill_2limited_ZIPF-distrib.csv";
     //char metric_file_fname[] = "D:\\output_files\\BENCH_origami_internal_sort_4_way.csv";
     //char metric_file_fname[] = "D:\\output_files\\BENCH_minheap_external_6TB.csv";
     /*char fname[] = "output_files\\test.bin";
@@ -114,10 +114,10 @@ int main(int argc, char** argv)
     unsigned long long fs_start;// , ms_start;
 
     //fs_start = 268435456 * 2LLU;
-    //fs_start = 268435456 * 2LLU * (1LLU << 7);
+    fs_start = 268435456 * 2LLU * (1LLU << 4);
     //fs_start = 268435456 * 2LLU * (1LLU << 6);
     //fs_start = (1LLU << 38) / sizeof(Itemtype);
-    fs_start = fs_max / 2;
+    //fs_start = fs_max / 4;
 
     fs_max = fs_start;
 
@@ -132,7 +132,7 @@ int main(int argc, char** argv)
 
     number_iterations = num_fs_iterations;// *num_ms_iterations;
     printf("fs_start = %llu\n", fs_start);
-    printf("fs_max = %llu\n", fs_max);
+    printf("fs_max   = %llu\n", fs_max);
 
     unsigned itr = 0;
     unsigned curr_itr = 0;

@@ -80,7 +80,7 @@ external_sort::external_sort(unsigned long long int _FILE_SIZE, unsigned long lo
     this->windows_fs = { 0 };
     this->windows_fs.QuadPart = sizeof(Itemtype) * _FILE_SIZE;
     this->write_buffer_size = (1LLU << 20) / sizeof(Itemtype);
-    this->block_size = 1LLU << 20;
+    this->block_size = (1LLU << 20);
 
     this->total_time = 0;
     this->total_generate_time = 0;
@@ -98,7 +98,8 @@ external_sort::external_sort(unsigned long long int _FILE_SIZE, unsigned long lo
     this->merge_populate_duration = 0;
     this->merge_duration = 0;
 
-    gen_type = LCG;
+    // implemented distributions: { LCG, FIB, ZIPF, dPARETO_NONUNIFORM }
+    gen_type = ZIPF;
 
     MEMORYSTATUSEX statex = { 0 };
     statex.dwLength = sizeof(statex);
@@ -110,7 +111,7 @@ external_sort::external_sort(unsigned long long int _FILE_SIZE, unsigned long lo
     mem_avail = ((mem_avail + 511) & (~511));
     //mem_avail = 1LLU << (unsigned)log2(mem_avail);
     // the following used for origami sort benchmark
-    mem_avail = (std::min)((1LLU << (unsigned)log2(mem_avail)) / 8, sizeof(Itemtype) * _FILE_SIZE / (2));
+    mem_avail = (std::min)((1LLU << (unsigned)log2(mem_avail)), sizeof(Itemtype) * _FILE_SIZE / (2));
     //mem_avail = 1LLU << 30
 
     this->merge_mem_avail = mem_avail;
@@ -156,26 +157,24 @@ int external_sort::write_file()
         printf("__FUNCTION__write_file(): Failed opening file with %d\n", GetLastError());
         exit(1);
     }
+    hrc::time_point s, e;
+    s = hrc::now();
+    if (gen_type == LCG) {
+        const unsigned int a = 214013;
+        // const unsigned int m = 4096*4;
+        const unsigned int c = 2531011;
+        Itemtype CREATE_VAR(next, 0) = rand();
+        Itemtype CREATE_VAR(next, 1) = rand();
+        Itemtype CREATE_VAR(next, 2) = rand();
+        Itemtype CREATE_VAR(next, 3) = rand();
+        Itemtype CREATE_VAR(next, 4) = rand();
+        Itemtype CREATE_VAR(next, 5) = rand();
+        Itemtype CREATE_VAR(next, 6) = rand();
+        Itemtype CREATE_VAR(next, 7) = rand();
 
-
-    const unsigned int a = 214013;
-    // const unsigned int m = 4096*4;
-    const unsigned int c = 2531011;
-    while (number_written < this->file_size) {
-        if (gen_type == LCG)
-        {
-            Itemtype CREATE_VAR(next, 0) = rand();
-            Itemtype CREATE_VAR(next, 1) = rand();
-            Itemtype CREATE_VAR(next, 2) = rand();
-            Itemtype CREATE_VAR(next, 3) = rand();
-            Itemtype CREATE_VAR(next, 4) = rand();
-            Itemtype CREATE_VAR(next, 5) = rand();
-            Itemtype CREATE_VAR(next, 6) = rand();
-            Itemtype CREATE_VAR(next, 7) = rand();
-
-            // populate buffer - utilizes the Linear Congruential Generator method
-            // https://en.wikipedia.org/wiki/Linear_congruential_generator
-
+        // populate buffer - utilizes the Linear Congruential Generator method
+        // https://en.wikipedia.org/wiki/Linear_congruential_generator
+        while (number_written < this->file_size) {
             unsigned long num_vals_to_gen = 0;
             if (number_written + this->write_buffer_size > this->file_size) {
                 if (number_written) {
@@ -233,21 +232,16 @@ int external_sort::write_file()
                 printf("    num_vals_to_write = %lu\n", num_vals_to_write);
                 printf("    new_num_vals_to_write = %lu\n", new_num_vals_to_write);
             }
+
             DWORD num_bytes_written;
-            hrc::time_point s, e;
-            s = hrc::now();
             BOOL was_success = WriteFile(pfile, wbuffer, sizeof(Itemtype) * new_num_vals_to_write, &num_bytes_written, NULL);
-            e = hrc::now();
-            double el = ELAPSED_MS(s, e);
-            //QueryPerformanceCounter(&start);
-            //QueryPerformanceCounter(&end);
+
             if (!(was_success)) {
                 printf("%s: Failed writing to file with %d\n", __FUNCTION__, GetLastError());
                 exit(1);
             }
 
             //write_duration += end.QuadPart - start.QuadPart;
-            write_duration += (el / 1000);
             number_written += num_vals_to_write;
 
             if ((number_written * sizeof(Itemtype)) % GB(1LLU) == 0) {
@@ -263,25 +257,458 @@ int external_sort::write_file()
                 printf("    windows_fs.LowPart = %llu\n", this->windows_fs.LowPart);
             }
         }
-        else if (gen_type == PARETO) {
+    }
+    else if (gen_type == dPARETO_NONUNIFORM) {
+        ui64 a = 6364136223846793005, c = 1442695040888963407, x = 1;
+        double ED = 20;
+        double alpha = 1, beta = 7;
+        ui64 sum = 0, keys = 0, y = 889;
+        ui64 maxF = 0;
+        unsigned idx = 0;
+        for (ui64 i = 0; i < this->file_size; i++)
+        {
+            x = x * a + c;
+            y = y * a + c;
 
-        }
-        else if (gen_type == FIB) {
+            // generate frequency from the Pareto distribution with alpha=1; otherwise, the generator gets slow
+            double u = (double)y / ((double)(1LLU << 63) * 2);			// uniform [0,1]
+            ui64 f = min(ceil(beta * (1 / (1 - u) - 1)), this->write_buffer_size);		// rounded-up Pareto
+            wbuffer[idx++] = f;
+            if (idx == this->write_buffer_size)
+            {
+                unsigned long num_vals_to_write = 0;
+                unsigned long new_num_vals_to_write = 0;
+                if (number_written + this->write_buffer_size > this->file_size) {
+                    if (number_written) {
+                        num_vals_to_write = this->file_size % number_written;
+                    }
+                    else {
+                        num_vals_to_write = this->file_size;
+                    }
+                    new_num_vals_to_write = (num_vals_to_write + 127) & (~127);
+                }
+                else {
+                    num_vals_to_write = this->write_buffer_size;
+                    new_num_vals_to_write = this->write_buffer_size;
+                }
+                
+                DWORD num_bytes_written;
+                
+                BOOL was_success = WriteFile(pfile, wbuffer, sizeof(Itemtype) * new_num_vals_to_write, &num_bytes_written, NULL);
+                
+                if (!(was_success)) {
+                    printf("%s: Failed writing to file with %d\n", __FUNCTION__, GetLastError());
+                    exit(1);
+                }
 
-        }
-        else if (gen_type == REVERSE) {
+                number_written += num_vals_to_write;
 
-        }
-        else if (gen_type == ZIPF) {
 
+                if ((number_written * sizeof(Itemtype)) % GB(1LLU) == 0) {
+                    printf("                                                                          \r");
+                    printf("    Written: %llu B (%llu MB)", number_written * sizeof(Itemtype), number_written * sizeof(Itemtype) / (1 << 20));
+                    //printf("      tot_bytes_read  = %llu B = %llu MB\n", tot_bytes_read, tot_bytes_read / (1LLU << 20));
+                }
+                idx = 0;
+            }
         }
-        else {
-            printf("    Unknown gen_type value %u\n");
-            exit(1);
+        if (idx != 0) {
+            unsigned long num_vals_to_write = 0;
+            unsigned long new_num_vals_to_write = 0;
+            if (number_written + this->write_buffer_size > this->file_size) {
+                if (number_written) {
+                    num_vals_to_write = this->file_size % number_written;
+                }
+                else {
+                    num_vals_to_write = this->file_size;
+                }
+                new_num_vals_to_write = (num_vals_to_write + 127) & (~127);
+            }
+            else {
+                num_vals_to_write = this->write_buffer_size;
+                new_num_vals_to_write = this->write_buffer_size;
+            }
+
+            DWORD num_bytes_written;
+
+            BOOL was_success = WriteFile(pfile, wbuffer, sizeof(Itemtype) * new_num_vals_to_write, &num_bytes_written, NULL);
+
+            if (!(was_success)) {
+                printf("%s: Failed writing to file with %d\n", __FUNCTION__, GetLastError());
+                exit(1);
+            }
+
+            number_written += num_vals_to_write;
+
+
+            if ((number_written * sizeof(Itemtype)) % GB(1LLU) == 0) {
+                printf("                                                                          \r");
+                printf("    Written: %llu B (%llu MB)", number_written * sizeof(Itemtype), number_written * sizeof(Itemtype) / (1 << 20));
+                //printf("      tot_bytes_read  = %llu B = %llu MB\n", tot_bytes_read, tot_bytes_read / (1LLU << 20));
+            }
+            idx = 0;
         }
     }
+    else if (gen_type == FIB) {
+        //printf("    this->write_buffer_size = %llu\n", this->write_buffer_size);
+        ui64 a = 0, b = 1, c;
+        
+        wbuffer[0] = 0; wbuffer[1] = 1;
+        ui64 i = 2;
+        unsigned idx = 2;
+        while (i < this->file_size) {
+            //printf("    idx = %u\n", idx);
+            //printf("        number_written = %llu\n", number_written);
+
+            c = a + b;
+            if (c < b) {	// overflow
+                //printf("CCCCCC\n");
+                a = 0; b = 1;
+
+                wbuffer[idx++] = 0;
+                i++;
+                //number_written++;
+
+                if (i < this->file_size && idx < this->write_buffer_size) {
+                    wbuffer[idx++] = 1;
+                    i++;
+                    //number_written++;
+                }
+            }
+            else {
+                a = b;
+                b = c;
+                wbuffer[idx++] = b;
+                i++;
+                //number_written++;
+            }
+            if (idx == this->write_buffer_size/* == 0 && number_written / this->write_buffer_size != 0*/)
+            {
+                //printf("        number_written = %llu\n", number_written);
+
+                unsigned long num_vals_to_write = 0;
+                unsigned long new_num_vals_to_write = 0;
+                if (number_written + this->write_buffer_size > this->file_size) {
+                    if (number_written) {
+                        num_vals_to_write = this->file_size % number_written;
+                    }
+                    else {
+                        num_vals_to_write = this->file_size;
+                    }
+                    new_num_vals_to_write = (num_vals_to_write + 127) & (~127);
+                }
+                else {
+                    num_vals_to_write = this->write_buffer_size;
+                    new_num_vals_to_write = this->write_buffer_size;
+                }
+
+                DWORD num_bytes_written;
+
+                BOOL was_success = WriteFile(pfile, wbuffer, sizeof(Itemtype) * new_num_vals_to_write, &num_bytes_written, NULL);
+
+                //QueryPerformanceCounter(&start);
+                //QueryPerformanceCounter(&end);
+                if (!(was_success)) {
+                    printf("%s: Failed writing to file with %d\n", __FUNCTION__, GetLastError());
+                    exit(1);
+                }
+
+                //write_duration += end.QuadPart - start.QuadPart;
+                number_written += num_vals_to_write;
+
+
+                if ((number_written * sizeof(Itemtype)) % GB(1LLU) == 0) {
+                    printf("                                                                          \r");
+                    printf("    Written: %llu B (%llu MB)", number_written * sizeof(Itemtype), number_written * sizeof(Itemtype) / (1 << 20));
+                    //printf("      tot_bytes_read  = %llu B = %llu MB\n", tot_bytes_read, tot_bytes_read / (1LLU << 20));
+                }
+                idx = 0;
+            }
+        }
+        if (idx != 0) {
+            unsigned long num_vals_to_write = 0;
+            unsigned long new_num_vals_to_write = 0;
+            if (number_written + this->write_buffer_size > this->file_size) {
+                if (number_written) {
+                    num_vals_to_write = this->file_size % number_written;
+                }
+                else {
+                    num_vals_to_write = this->file_size;
+                }
+                new_num_vals_to_write = (num_vals_to_write + 127) & (~127);
+            }
+            else {
+                num_vals_to_write = this->write_buffer_size;
+                new_num_vals_to_write = this->write_buffer_size;
+            }
+
+            DWORD num_bytes_written;
+
+            BOOL was_success = WriteFile(pfile, wbuffer, sizeof(Itemtype) * new_num_vals_to_write, &num_bytes_written, NULL);
+
+            //QueryPerformanceCounter(&start);
+            //QueryPerformanceCounter(&end);
+            if (!(was_success)) {
+                printf("%s: Failed writing to file with %d\n", __FUNCTION__, GetLastError());
+                exit(1);
+            }
+
+            //write_duration += end.QuadPart - start.QuadPart;
+            number_written += num_vals_to_write;
+
+
+            if ((number_written * sizeof(Itemtype)) % GB(1LLU) == 0) {
+                printf("                                                                          \r");
+                printf("    Written: %llu B (%llu MB)", number_written * sizeof(Itemtype), number_written * sizeof(Itemtype) / (1 << 20));
+                //printf("      tot_bytes_read  = %llu B = %llu MB\n", tot_bytes_read, tot_bytes_read / (1LLU << 20));
+            }
+            idx = 0;
+        }
+    }
+    else if (gen_type == dMT) {
+        unsigned idx = 0;
+        if constexpr (std::is_same<Itemtype, ui>::value || std::is_same<Itemtype, int>::value) {
+            std::mt19937 g;
+            std::uniform_int_distribution<Itemtype> d;
+            for (ui64 i = 0; i < this->file_size; i++) 
+            {
+                wbuffer[idx++] = d(g);
+                if (idx == this->write_buffer_size)
+                {
+                    unsigned long num_vals_to_write = 0;
+                    unsigned long new_num_vals_to_write = 0;
+                    if (number_written + this->write_buffer_size > this->file_size) {
+                        if (number_written) {
+                            num_vals_to_write = this->file_size % number_written;
+                        }
+                        else {
+                            num_vals_to_write = this->file_size;
+                        }
+                        new_num_vals_to_write = (num_vals_to_write + 127) & (~127);
+                    }
+                    else {
+                        num_vals_to_write = this->write_buffer_size;
+                        new_num_vals_to_write = this->write_buffer_size;
+                    }
+
+                    DWORD num_bytes_written;
+                    BOOL was_success = WriteFile(pfile, wbuffer, sizeof(Itemtype) * new_num_vals_to_write, &num_bytes_written, NULL);
+
+                    if (!(was_success)) {
+                        printf("%s: Failed writing to file with %d\n", __FUNCTION__, GetLastError());
+                        exit(1);
+                    }
+                    number_written += num_vals_to_write;
+                    if ((number_written * sizeof(Itemtype)) % GB(1LLU) == 0) {
+                        printf("                                                                          \r");
+                        printf("    Written: %llu B (%llu MB)", number_written * sizeof(Itemtype), number_written * sizeof(Itemtype) / (1 << 20));
+                    }
+                    idx = 0;
+                }
+            }
+        }
+        else if constexpr (std::is_same<Itemtype, i64>::value || std::is_same<Itemtype, ui64>::value) {
+            std::mt19937_64 g;
+            std::uniform_int_distribution<Itemtype> d;
+            //FOR(i, n, 1) A[i] = d(g);
+            unsigned idx = 0;
+            for (ui64 i = 0; i < this->file_size; i++)
+            {
+                wbuffer[idx++] = d(g);
+                if (idx == this->write_buffer_size)
+                {
+                    unsigned long num_vals_to_write = 0;
+                    unsigned long new_num_vals_to_write = 0;
+                    if (number_written + this->write_buffer_size > this->file_size) {
+                        if (number_written) {
+                            num_vals_to_write = this->file_size % number_written;
+                        }
+                        else {
+                            num_vals_to_write = this->file_size;
+                        }
+                        new_num_vals_to_write = (num_vals_to_write + 127) & (~127);
+                    }
+                    else {
+                        num_vals_to_write = this->write_buffer_size;
+                        new_num_vals_to_write = this->write_buffer_size;
+                    }
+
+                    DWORD num_bytes_written;
+
+                    BOOL was_success = WriteFile(pfile, wbuffer, sizeof(Itemtype) * new_num_vals_to_write, &num_bytes_written, NULL);
+
+                    if (!(was_success)) {
+                        printf("%s: Failed writing to file with %d\n", __FUNCTION__, GetLastError());
+                        exit(1);
+                    }
+
+                    number_written += num_vals_to_write;
+
+
+                    if ((number_written * sizeof(Itemtype)) % GB(1LLU) == 0) {
+                        printf("                                                                          \r");
+                        printf("    Written: %llu B (%llu MB)", number_written * sizeof(Itemtype), number_written * sizeof(Itemtype) / (1 << 20));
+                        //printf("      tot_bytes_read  = %llu B = %llu MB\n", tot_bytes_read, tot_bytes_read / (1LLU << 20));
+                    }
+                    idx = 0;
+                }
+            }
+        }
+        if (idx != 0) {
+            unsigned long num_vals_to_write = 0;
+            unsigned long new_num_vals_to_write = 0;
+            if (number_written + this->write_buffer_size > this->file_size) {
+                if (number_written) {
+                    num_vals_to_write = this->file_size % number_written;
+                }
+                else {
+                    num_vals_to_write = this->file_size;
+                }
+                new_num_vals_to_write = (num_vals_to_write + 127) & (~127);
+            }
+            else {
+                num_vals_to_write = this->write_buffer_size;
+                new_num_vals_to_write = this->write_buffer_size;
+            }
+
+            DWORD num_bytes_written;
+
+            BOOL was_success = WriteFile(pfile, wbuffer, sizeof(Itemtype) * new_num_vals_to_write, &num_bytes_written, NULL);
+
+            if (!(was_success)) {
+                printf("%s: Failed writing to file with %d\n", __FUNCTION__, GetLastError());
+                exit(1);
+            }
+
+            number_written += num_vals_to_write;
+
+
+            if ((number_written * sizeof(Itemtype)) % GB(1LLU) == 0) {
+                printf("                                                                          \r");
+                printf("    Written: %llu B (%llu MB)", number_written * sizeof(Itemtype), number_written * sizeof(Itemtype) / (1 << 20));
+                //printf("      tot_bytes_read  = %llu B = %llu MB\n", tot_bytes_read, tot_bytes_read / (1LLU << 20));
+            }
+            idx = 0;
+        }
+    }
+    else if (gen_type == ZIPF) {
+        // https://stackoverflow.com/questions/9983239/how-to-generate-zipf-distributed-numbers-efficiently
+        // https://cse.usf.edu/~kchriste/tools/genzipf.c
+        unsigned idx = 0;
+        bool first = true;
+        double c = 0;
+        double z;
+        double n = 5000;
+        double alpha = 1.0;
+        double sum_prob;
+        Itemtype zipf_value;
+        int low, high, mid;
+        // compute normalization constant
+        for (ui64 i = 1; i < n; i++) {
+            c = c + (1.0 / pow((double)i, alpha));
+        }
+        c = 1.0 / c;
+        for (ui64 count = 0; count < this->file_size; count++) {
+            do {
+                z = (double)rand() / RAND_MAX;
+            } while ((z == 0) || (z == 1));
+            sum_prob = 0;
+            for (ui64 i = 0; i < n; i++) {
+                sum_prob = sum_prob + c / pow((double)i, alpha);
+                if (sum_prob >= z)
+                {
+                    zipf_value = i;
+                    break;
+                }
+            }
+            // Assert that zipf_value is between 1 and N
+            //assert((zipf_value >= 1) && (zipf_value <= n));
+            wbuffer[idx++] = zipf_value;
+            if (idx == this->write_buffer_size)
+            {
+                //printf("a\n");
+                //printf("idx = %u\n", idx);
+
+                unsigned long num_vals_to_write = 0;
+                unsigned long new_num_vals_to_write = 0;
+                if (number_written + this->write_buffer_size > this->file_size) {
+                    if (number_written) {
+                        num_vals_to_write = this->file_size % number_written;
+                    }
+                    else {
+                        num_vals_to_write = this->file_size;
+                    }
+                    new_num_vals_to_write = (num_vals_to_write + 127) & (~127);
+                }
+                else {
+                    num_vals_to_write = this->write_buffer_size;
+                    new_num_vals_to_write = this->write_buffer_size;
+                }
+
+                DWORD num_bytes_written;
+
+                BOOL was_success = WriteFile(pfile, wbuffer, sizeof(Itemtype) * new_num_vals_to_write, &num_bytes_written, NULL);
+
+                if (!(was_success)) {
+                    printf("%s: Failed writing to file with %d\n", __FUNCTION__, GetLastError());
+                    exit(1);
+                }
+
+                number_written += num_vals_to_write;
+
+
+                if ((number_written * sizeof(Itemtype)) % GB(1LLU) == 0) {
+                    printf("                                                                          \r");
+                    printf("    Written: %llu B (%llu MB)", number_written * sizeof(Itemtype), number_written * sizeof(Itemtype) / (1 << 20));
+                    //printf("      tot_bytes_read  = %llu B = %llu MB\n", tot_bytes_read, tot_bytes_read / (1LLU << 20));
+                }
+                idx = 0;
+            }
+        }
+        if (idx != 0) {
+            unsigned long num_vals_to_write = 0;
+            unsigned long new_num_vals_to_write = 0;
+            if (number_written + this->write_buffer_size > this->file_size) {
+                if (number_written) {
+                    num_vals_to_write = this->file_size % number_written;
+                }
+                else {
+                    num_vals_to_write = this->file_size;
+                }
+                new_num_vals_to_write = (num_vals_to_write + 127) & (~127);
+            }
+            else {
+                num_vals_to_write = this->write_buffer_size;
+                new_num_vals_to_write = this->write_buffer_size;
+            }
+
+            DWORD num_bytes_written;
+
+            BOOL was_success = WriteFile(pfile, wbuffer, sizeof(Itemtype) * new_num_vals_to_write, &num_bytes_written, NULL);
+
+            if (!(was_success)) {
+                printf("%s: Failed writing to file with %d\n", __FUNCTION__, GetLastError());
+                exit(1);
+            }
+
+            number_written += num_vals_to_write;
+
+
+            if ((number_written * sizeof(Itemtype)) % GB(1LLU) == 0) {
+                printf("                                                                          \r");
+                printf("    Written: %llu B (%llu MB)", number_written * sizeof(Itemtype), number_written * sizeof(Itemtype) / (1 << 20));
+                //printf("      tot_bytes_read  = %llu B = %llu MB\n", tot_bytes_read, tot_bytes_read / (1LLU << 20));
+            }
+            idx = 0;
+        }
+    }
+    else {
+        printf("    Unknown gen_type value %u\n");
+        exit(1);
+    }
+    
     CloseHandle(pfile);
-    if (number_written % 512 != 0) {
+    if (!this->seq_run && number_written % 512 != 0) {
         LARGE_INTEGER before_sfp = { 0 };
         before_sfp.QuadPart = this->windows_fs.QuadPart;
         pfile = CreateFile(this->fname, GENERIC_WRITE, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -296,6 +723,11 @@ int external_sort::write_file()
         CloseHandle(pfile);
         this->windows_fs.QuadPart = before_sfp.QuadPart;
     }
+
+    e = hrc::now();
+    double el = ELAPSED_MS(s, e);
+
+    write_duration += (el / 1000);
 
     _aligned_free(wbuffer);
     wbuffer = nullptr;
@@ -465,16 +897,7 @@ int external_sort::sort_file()
 
         read_duration += end.QuadPart - start.QuadPart;
         number_read += num_vals_to_read;
-        //#ifdef DEBUG_PRINT
-        //            printf("    number_read after read = %llu\n", number_read);
-        //#endif
-                /*for (unsigned int i = 0; i < 2; i++) {
-                    printf("buffer[%d] = %u\n", i, sort_buffer[i]);
-                }
-                for (unsigned int i = num_vals_to_read - 2; i < num_vals_to_read; i++) {
-                    printf("buffer[%d] = %u\n", i, sort_buffer[i]);
-                }*/
-                // sort the buffer and get time info
+        
         Itemtype* sort_buffer_end = sort_buffer + num_vals_to_read;
         Itemtype* output = (Itemtype*)_aligned_malloc(static_cast<size_t>(oos_size) * sizeof(Itemtype), this->bytes_per_sector);
         Itemtype* o = sort_buffer;
@@ -487,8 +910,8 @@ int external_sort::sort_file()
         }
         else {
             //printf("    origami\n");
-            ui n_threads = 8;
-            ui n_cores = 8;
+            ui n_threads = 4;
+            ui n_cores = 4;
             ui min_k = 4;
             Itemtype* kway_buf = nullptr;
             ui64 kway_buf_size = MB(256);

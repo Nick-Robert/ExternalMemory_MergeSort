@@ -4,7 +4,7 @@
 //#include "commons.h"
 #include "MinHeap.h"
 
-enum distribution { LCG, PARETO, FIB, REVERSE, ZIPF };
+enum distribution { LCG, FIB, REVERSE, ZIPF, dPARETO_B2B, dPARETO_SHUFF, dPARETO_NONUNIFORM, dMT };
 
 
 struct state_vars {
