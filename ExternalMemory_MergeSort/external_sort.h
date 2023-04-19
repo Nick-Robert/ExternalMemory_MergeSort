@@ -5,6 +5,7 @@
 #include "MinHeap.h"
 
 enum distribution { LCG, FIB, REVERSE, ZIPF, dPARETO_B2B, dPARETO_SHUFF, dPARETO_NONUNIFORM, dMT };
+enum fullsorted_location { FORMER, LATTER };
 
 
 struct state_vars {
@@ -45,6 +46,8 @@ struct state_vars {
     // in number of vals
     uint64_t nobuff_bufsize;
 
+    unsigned int total_num_to_refill;
+
     void print() const {
         printf("File vals\n");
         printf("    start_offset = %llu\n", start_offset);
@@ -73,7 +76,7 @@ class external_sort
     char* full_sorted_fname;
     char* metrics_fname;
 
-    //std::queue<Itemtype*> free_blocks;
+    std::queue<Itemtype*> free_blocks;
     
 
     bool test_sort = false;
@@ -135,7 +138,9 @@ public:
 
     void init_buffers(char* buf);
 
-    int merge_sort();
+    //uint64_t populate_blocks(unsigned idx, unsigned long long* remaining_vals, Itemtype* rbuff);
+
+    int merge_sort(enum fullsorted_location loc);
 
     void print_metrics();
 
@@ -151,6 +156,8 @@ public:
 void process_buffer(int stream_idx, char** _p, char** _endp);
 
 uint64_t populate_blocks(unsigned idx, unsigned long long remaining_vals, unsigned long long total_vals_to_read, HANDLE* f, unsigned num_blocks);
+//uint64_t populate_blocks(unsigned idx, unsigned long long remaining_vals, unsigned long long total_vals_to_read, HANDLE* f);
+
 
 //uint64_t normal_populate_blocks(unsigned idx, unsigned long long remaining_vals, unsigned long long total_vals_to_read, HANDLE* f, unsigned num_blocks);
 

@@ -154,7 +154,7 @@
     <ClCompile Include="v3_es.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="v4_es.cpp">
+    <ClCompile Include="minheap_ext_sort.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="v5_es.cpp">
