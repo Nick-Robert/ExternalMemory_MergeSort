@@ -114,7 +114,7 @@ int main(int argc, char** argv)
     unsigned long long fs_start;// , ms_start;
 
     fs_start = 268435456 * 2LLU;
-    //fs_start = 268435456 * 2LLU * (1LLU << 4);
+    fs_start = 268435456 * 2LLU * (1LLU << 8);
     //fs_start = 268435456 * 2LLU * (1LLU << 6);
     //fs_start = (1LLU << 38) / sizeof(Itemtype);
     //fs_start = fs_max / 4;
@@ -145,7 +145,7 @@ int main(int argc, char** argv)
             external_sort extsrt(fs, ms, seq_fname, seq_fname, seq_fname, metric_file_fname, num_runs, TEST_SORT, GIVE_VALS, DEBUG);
             extsrt.generate_averages();
             extsrt.save_metrics(true, false);
-            //extsrt.shallow_validate();
+            extsrt.shallow_validate();
             if (fs <= 2621440) {
                 extsrt.deep_validate();
             }

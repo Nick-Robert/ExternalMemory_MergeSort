@@ -111,8 +111,8 @@ external_sort::external_sort(unsigned long long int _FILE_SIZE, unsigned long lo
     mem_avail = ((mem_avail + 511) & (~511));
     //mem_avail = 1LLU << (unsigned)log2(mem_avail);
     // the following used for origami sort benchmark (forces 4-way for small enough file sizes)
-    mem_avail = (std::min)((1LLU << (unsigned)(log2(mem_avail))), sizeof(Itemtype) * _FILE_SIZE / (2));
-    //mem_avail = 1LLU << 30;
+    //mem_avail = (std::min)((1LLU << (unsigned)(log2(mem_avail))), sizeof(Itemtype) * _FILE_SIZE / (2));
+    mem_avail = 1LLU << 30;
 
     this->merge_mem_avail = mem_avail;
     this->mem_avail = mem_avail / 2;
@@ -1162,7 +1162,7 @@ uint64_t populate_blocks(unsigned idx, unsigned long long remaining_vals, unsign
 void process_buffer(int stream_idx, char** _p, char** _endp) {
     // define X and endX to be pointers on the current block for each stream
     // experiment with size of memory blocks to help minimize process buffer calls (1MB -> 16 MB -> 32 -> 64)
-#define CORRECTNESS_CHECK
+//#define CORRECTNESS_CHECK
 //#define MULTI_DEBUG_PRINT
     if (stream_idx == -1) {		// flush output buffer
         char* output = X[num_chunks];
@@ -1705,9 +1705,13 @@ void external_sort::init_buffers(char* buf) {
 
 int external_sort::merge_sort(enum fullsorted_location loc)
 {
+#define merge_info_print
+#ifdef merge_info_print
     printf("\n%s\n", __FUNCTION__);
     //num_chunks = (this->file_size % this->chunk_size == 0) ? (this->file_size / this->chunk_size) : ((this->file_size / this->chunk_size) + 1);
+#endif
     printf("    num_chunks = %llu\n", num_chunks);
+
     orig_num_chunks = num_chunks;
     file_size = this->file_size;
     chunk_size = this->chunk_size;
@@ -1792,8 +1796,8 @@ int external_sort::merge_sort(enum fullsorted_location loc)
                 }
                 unsigned long long tot_bytes = sizeof(Itemtype) * new_num_vals_to_read;
                 read_into_buffer(&chunk_sorted_file, copy_buffer, tot_bytes);
-                printf("copy_buffer[0] = %u\n", copy_buffer[0]);
-                printf("copy_buffer[1] = %u\n", copy_buffer[1]);
+                //printf("copy_buffer[0] = %u\n", copy_buffer[0]);
+                //printf("copy_buffer[1] = %u\n", copy_buffer[1]);
                 // once the values are in sort_buffer, write them into the file
                 DWORD num_bytes_touched;
                 bool was_success = WriteFile(full_sorted_file, copy_buffer, tot_bytes, &num_bytes_touched, NULL);
@@ -1801,8 +1805,8 @@ int external_sort::merge_sort(enum fullsorted_location loc)
                     printf("%s: Failed writing to new file for sort output with %d\n", __FUNCTION__, GetLastError());
                     exit(1);
                 }
-                printf("    num_bytes_touched = %llu\n", num_bytes_touched);
-                printf("    tot_bytes = %llu\n", tot_bytes);
+                //printf("    num_bytes_touched = %llu\n", num_bytes_touched);
+                //printf("    tot_bytes = %llu\n", tot_bytes);
 
                 tot_copied.QuadPart += tot_bytes;
                 _aligned_free(copy_buffer);
@@ -1916,10 +1920,10 @@ int external_sort::merge_sort(enum fullsorted_location loc)
             }
             int_c = power >> 1;
         }
-
-        printf("    c              = %.2f\n", c);
-        printf("    int_c          = %u\n", int_c);
-
+#ifdef merge_info_print
+        printf("        c              = %.2f\n", c);
+        printf("        int_c          = %u\n", int_c);
+#endif
         unsigned long long tot_bytes_from_delta = 0;
         for (int i = 0; i < ceil(1.0 * num_chunks / int_c); i++)
         {
@@ -1932,7 +1936,9 @@ int external_sort::merge_sort(enum fullsorted_location loc)
             //temp -= temp % this->bytes_per_sector;
             temp += (1LLU * num_chunks * 512);
             z.push_back(temp);
+#ifdef merge_info_print
             printf("    group %d: %llu MB\n", i, temp / (1LLU << 20));
+#endif
             tot_bytes_from_delta += z.at(i);
         }
 
@@ -1945,8 +1951,10 @@ int external_sort::merge_sort(enum fullsorted_location loc)
 #ifdef MERGE_DEBUG
         printf("       largest_chunk  = %llu vals (%llu MB)\n", largest_chunk, largest_chunk * sizeof(Itemtype) / (1LLU << 20));
 #endif
+#ifdef merge_info_print
         printf("       tot_bytes_from_delta  = %llu MB (%llu B)\n", tot_bytes_from_delta / (1LLU << 20), tot_bytes_from_delta);
         printf("       percent  = %.2f\n", static_cast<double>(tot_bytes_from_delta) / this->merge_mem_avail);
+#endif
         if (static_cast<double>(tot_bytes_from_delta) / this->merge_mem_avail > 1.2) { exit(1); }
 
         unsigned running_c = 0;
@@ -1970,12 +1978,12 @@ int external_sort::merge_sort(enum fullsorted_location loc)
         }
 
         largest_chunk = z_indiv.at(0);
-#ifdef MULTI_DEBUG_PRINT
+//#ifdef MULTI_DEBUG_PRINT
         for (int i = 0; i < num_chunks; i++)
         {
             printf("    bucket %d: %llu MB\n", i, z_indiv.at(i) / (1LLU << 20));
         }
-#endif
+//#endif
         //Itemtype* sorted_num_buffer = (Itemtype*)_aligned_malloc(this->write_buffer_size * sizeof(Itemtype), this->bytes_per_sector);
         INT64 running_file_offset = 0;
 
@@ -2010,10 +2018,18 @@ int external_sort::merge_sort(enum fullsorted_location loc)
                 new_chunk.seek_offset = (std::min)(new_chunk.bufsize, new_chunk.end_offset - new_chunk.start_offset);
             }
             else {
-                // start of the whole chunk in the file
-                new_chunk.start_offset = this->windows_fs.QuadPart + running_file_offset * sizeof(Itemtype);
-                // end of the whole chunk in the file (equivalent to the start of the next chunk, if it exists)
-                new_chunk.end_offset = this->windows_fs.QuadPart + (running_file_offset + new_chunk.chunk_size) * sizeof(Itemtype);
+                if (loc == FORMER) {
+                    // start of the whole chunk in the file
+                    new_chunk.start_offset = this->windows_fs.QuadPart + running_file_offset * sizeof(Itemtype);
+                    // end of the whole chunk in the file (equivalent to the start of the next chunk, if it exists)
+                    new_chunk.end_offset = this->windows_fs.QuadPart + (running_file_offset + new_chunk.chunk_size) * sizeof(Itemtype);
+                }
+                else {
+                    // start of the whole chunk in the file
+                    new_chunk.start_offset = 2*this->windows_fs.QuadPart + running_file_offset * sizeof(Itemtype);
+                    // end of the whole chunk in the file (equivalent to the start of the next chunk, if it exists)
+                    new_chunk.end_offset = 2*this->windows_fs.QuadPart + (running_file_offset + new_chunk.chunk_size) * sizeof(Itemtype);
+                }
                 // how big a portion this chunk gets in memory (not necessarilly contiguous)
                 new_chunk.bufsize = (std::min)(z_indiv.at(i), new_chunk.end_offset - new_chunk.start_offset);
                 // next place in the file to start the next seek from the start_offset
@@ -2028,14 +2044,16 @@ int external_sort::merge_sort(enum fullsorted_location loc)
             if (i == num_chunks - 1 && num_chunks % int_c != 0) {
                 new_chunk.total_num_to_refill = num_chunks % int_c;
             }
-#ifdef MERGE_DEBUG
+//#ifdef MERGE_DEBUG
             printf("  i = %u\n", i);
             printf("    new_chunk.num_blocks = %llu\n", new_chunk.num_blocks);
             printf("    new_chunk.bufsize    = %llu\n", new_chunk.bufsize);
+            printf("    new_chunk.bufsize    = %llu MB\n", new_chunk.bufsize / (1LLU<<20));
             printf("    new_chunk.chunk_size = %llu\n", new_chunk.chunk_size);
             printf("    this->chunk_size     = %llu\n", this->chunk_size);
             printf("    this->file_size     = %llu\n", this->file_size);
-#endif
+            printf("    running_file_offset     = %llu\n", running_file_offset);
+//#endif
             for (unsigned i = 0; i < new_chunk.num_blocks; i++)
             {
                 Itemtype* temp = (Itemtype*)_aligned_malloc(this->block_size, this->bytes_per_sector);
@@ -2225,12 +2243,16 @@ int external_sort::merge_sort(enum fullsorted_location loc)
         if (this->seq_run)
         {
             unsigned long long tot_bytes = this->file_size * sizeof(Itemtype);
+            unsigned long long orig_tot_bytes = tot_bytes;
+            printf("        tot_bytes = %llu MB\n", tot_bytes / (1LLU << 20));
+            printf("        this->chunk_size = %llu MB\n", this->chunk_size * sizeof(Itemtype) / (1LLU << 20));
             FOR(i, num_chunks, 1) {
                 bytes_left[i] = (std::min)(tot_bytes, this->chunk_size * sizeof(Itemtype));
                 tot_bytes -= (this->chunk_size * sizeof(Itemtype));
                 str_inits[i] = false;
                 chunk_done[i] = false;
             }
+            printf("        orig - new = %llu MB\n", (orig_tot_bytes - tot_bytes) / (1LLU << 20));
 
             if (two_real_chunks) {
                 bytes_left[2] = 0;
@@ -2283,7 +2305,7 @@ int external_sort::merge_sort(enum fullsorted_location loc)
             void (*f)(int, char**, char**);
             f = &process_buffer;
             //printf("    Initial populate done in %.2f ms, speed %.2f M keys/s\n", glb_populate_duration * 1e3, this->file_size * 1.0 / 1e6 / glb_populate_duration);
-            printf("Merging %s ... \n", this->fname);
+            printf("    Merging %s ... \n", this->fname);
             hrc::time_point s, e;
             //using Reg = REG_TYPE;
             //using Item = Itemtype;
@@ -2319,7 +2341,7 @@ int external_sort::merge_sort(enum fullsorted_location loc)
             origami_external_sorter::merge<Regtype, Itemtype>(f, num_chunks);
             e = hrc::now();
             double el = ELAPSED_MS(s, e);
-            printf("\nDone in %.2f ms, Speed: %.2f M keys/s\n", el, this->file_size * 1.0 / el / 1e3);
+            printf("\n      Done in %.2f ms, Speed: %.2f M keys/s\n", el, this->file_size * 1.0 / el / 1e3);
             this->merge_duration = el / 1000;
 
             // cleanup
@@ -2347,7 +2369,9 @@ int external_sort::merge_sort(enum fullsorted_location loc)
         CloseHandle(chunk_sorted_file);
         CloseHandle(full_sorted_file);
     }
+#ifdef merge_info_print
     printf("    num_seeks = %d, num_refills = %d\n", nseeks, num_refills);
+#endif
     //printf("num_refills = %d\n", num_refills);
     //printf("    tot_bytes_read  = %llu B = %llu MB\n", tot_bytes_read, tot_bytes_read / (1LLU << 20));
     //printf("    tot_bytes_written  = %llu B = %llu MB\n", tot_bytes_written, tot_bytes_written / (1LLU << 20));
@@ -2355,14 +2379,10 @@ int external_sort::merge_sort(enum fullsorted_location loc)
     //printf("num_refills = %llu\n", num_refills);
     //_aligned_free(sorted_num_buffer);
 
-    this->num_seeks = nseeks;
+    this->num_seeks += nseeks;
     this->merge_write_duration = glb_write_duration;
     this->merge_populate_duration = glb_populate_duration;
     this->merge_read_duration = glb_read_duration;
-    printf("    Merge done in %.2f ms, speed %.2f M keys/s\n", this->merge_duration * 1e3, this->file_size * 1.0 / 1e6 / this->merge_duration);
-    printf("    Populate done in %.2f ms, speed %.2f M keys/s\n", this->merge_populate_duration * 1e3, this->file_size * 1.0 / 1e6 / this->merge_populate_duration);
-    printf("    Read done in %.2f ms, speed %.2f M keys/s\n", this->merge_read_duration * 1e3, this->file_size * 1.0 / 1e6 / this->merge_read_duration);
-    printf("    Write done in %.2f ms, speed %.2f M keys/s\n", this->merge_write_duration * 1e3, this->file_size * 1.0 / 1e6 / this->merge_write_duration);
     return 0;
 }
 
@@ -2459,36 +2479,60 @@ int external_sort::save_metrics(bool header, bool extra_space)
     return 0;
 }
 
+enum fullsorted_location glb_loc = FORMER;
 
 int external_sort::generate_averages()
 {
 //#define generate_data
     LARGE_INTEGER start = { 0 }, end = { 0 }, freq = { 0 };
     unsigned int init_num_chunks = (this->file_size % this->chunk_size == 0) ? (this->file_size / this->chunk_size) : ((this->file_size / this->chunk_size) + 1);
+    printf("    init_num_chunks = %u\n", init_num_chunks);
+    printf("    this->chunk_size = %u MB\n", this->chunk_size * sizeof(Itemtype) / (1LLU << 20));
     // this vector gives the number of groups of chunks that need to be combined
     //std::vector<unsigned int> k_levels;
     double num_workable_chunks = 1.0*init_num_chunks;
     // default is 1 overall group
     //k_levels.push_back(1);
     unsigned int num_merges = 1;
-    while (num_workable_chunks > 1000) {
+    double temp = num_workable_chunks;
+    while (temp > 1000) {
+        temp = sqrt(temp);
         num_merges++;
     }
     QueryPerformanceFrequency(&freq);
     for (int i = 0; i < this->num_runs; i++)
     {
+        QueryPerformanceCounter(&start);
+#ifdef generate_data
+        write_file();
+#endif
+
+        this->total_generate_time += this->generation_duration;
+        this->total_write_time += this->write_duration;
+        if (this->test_sort)
+        {
+            //sort_file();
+            this->total_sort_time += this->sort_duration;
+            this->total_read_time += this->read_duration;
+        }
+        unsigned prev_num_chunk_per_group = 0;
         for (int idx = 0; idx < num_merges; idx++)
         {
-            enum fullsorted_location loc = FORMER;
             unsigned num_sqrts = num_merges - 1 - idx;
+            printf("    num_sqrts = %u\n", num_sqrts);
             for (int j = 0; j < num_sqrts; j++)
             {
                 num_workable_chunks = sqrt(num_workable_chunks);
             }
+            if (num_sqrts == 0)
+            {
+                num_workable_chunks = 1;
+            }
 
             unsigned int int_num_workable_chunks = ceil(num_workable_chunks);
+            printf("    int_num_workable_chunks = %u\n", int_num_workable_chunks);
 
-            if (num_workable_chunks - int_num_workable_chunks > 0.0001)
+            if (num_workable_chunks - int_num_workable_chunks > 0.0001 || num_workable_chunks - int_num_workable_chunks < 0.0001)
             {
                 unsigned power = 1;
                 while (power <= int_num_workable_chunks)
@@ -2498,30 +2542,31 @@ int external_sort::generate_averages()
                 int_num_workable_chunks = power >> 1;
             }
 
-            unsigned num_groups_of_chunks = init_num_chunks / int_num_workable_chunks;
+            unsigned num_groups_of_chunks = int_num_workable_chunks;
+            
             unsigned num_chunks_per_group = init_num_chunks / num_groups_of_chunks;
-            //k_levels.push_back(init_num_chunks / int_num_workable_chunks);
+            //unsigned temp = num_chunks_per
+            if (idx > 0) 
+            {
+                num_chunks_per_group = prev_num_chunk_per_group;
+                this->chunk_size *= prev_num_chunk_per_group;
+            }
+            prev_num_chunk_per_group = num_chunks_per_group;
+
+            system("pause");
+
             for (unsigned run = 0; run < num_groups_of_chunks; run++)
             {
-                
+                printf("    run = %u\n", run);
+                printf("        num_groups_of_chunks = %u\n", num_groups_of_chunks);
+                printf("        num_chunks_per_group = %u\n", num_chunks_per_group);
+                printf("        this->chunk_size = %u MB\n", this->chunk_size / (1LLU << 20));
                 fp_offset = static_cast<unsigned long long>(run) * num_chunks_per_group * this->chunk_size;
                 num_chunks = num_chunks_per_group;
+                printf("        fp_offset = %llu\n", fp_offset);
+                printf("        glb_loc = %llu\n", glb_loc);
 
-                QueryPerformanceCounter(&start);
-#ifdef generate_data
-                write_file();
-#endif
-
-                this->total_generate_time += this->generation_duration;
-                this->total_write_time += this->write_duration;
-                if (this->test_sort)
-                {
-                    sort_file();
-                    this->total_sort_time += this->sort_duration;
-                    this->total_read_time += this->read_duration;
-                }
-                // add an offset parameter to merge_sort function that will give a certain byte offset to each file pointer
-                merge_sort(loc);
+                merge_sort(glb_loc);
                 QueryPerformanceCounter(&end);
                 this->total_time += (static_cast<double>(end.QuadPart) - start.QuadPart) / freq.QuadPart;
                 this->total_merge_time += this->merge_duration;
@@ -2539,11 +2584,15 @@ int external_sort::generate_averages()
                 state.clear();
             }
             if (idx != num_merges - 1) {
-                if (loc == FORMER) { loc = LATTER; }
-                else if (loc == LATTER) { loc = FORMER; }
+                if (glb_loc == FORMER) { glb_loc = LATTER; }
+                else if (glb_loc == LATTER) { glb_loc = FORMER; }
             }
             double num_workable_chunks = 1.0 * init_num_chunks;
         }
+        printf("        Merge done in %.2f ms, speed %.2f M keys/s\n", this->merge_duration * 1e3, this->file_size * 1.0 / 1e6 / this->merge_duration);
+        printf("        Populate done in %.2f ms, speed %.2f M keys/s\n", this->merge_populate_duration * 1e3, this->file_size * 1.0 / 1e6 / this->merge_populate_duration);
+        printf("        Read done in %.2f ms, speed %.2f M keys/s\n", this->merge_read_duration * 1e3, this->file_size * 1.0 / 1e6 / this->merge_read_duration);
+        printf("        Write done in %.2f ms, speed %.2f M keys/s\n", this->merge_write_duration * 1e3, this->file_size * 1.0 / 1e6 / this->merge_write_duration);
     }
     return 0;
 }
@@ -2562,21 +2611,39 @@ int external_sort::shallow_validate()
     HANDLE file = nullptr, cfile = nullptr, rfile = nullptr;
 
     if (this->seq_run) {
-        file = CreateFile(this->full_sorted_fname, GENERIC_READ | GENERIC_WRITE,
-            FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
-            NULL,
-            OPEN_EXISTING,
-            FILE_ATTRIBUTE_NORMAL,
-            NULL);
-
-
-        DWORD num_moved = 0;
-        LARGE_INTEGER new_fp = { 0 };
-        new_fp.QuadPart = 2LLU * this->windows_fs.QuadPart;
-        num_moved = SetFilePointer(file, new_fp.LowPart, &new_fp.HighPart, FILE_BEGIN);
-        if (num_moved == INVALID_SET_FILE_POINTER) {
-            printf("%s: error in SetFilePointer for full sorted with %d\n", __FUNCTION__, GetLastError());
-            exit(1);
+        if (glb_loc == FORMER)
+        {
+            file = CreateFile(this->full_sorted_fname, GENERIC_READ | GENERIC_WRITE,
+                FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
+                NULL,
+                OPEN_EXISTING,
+                FILE_ATTRIBUTE_NORMAL,
+                NULL);
+            DWORD num_moved = 0;
+            LARGE_INTEGER new_fp = { 0 };
+            new_fp.QuadPart = 2LLU * this->windows_fs.QuadPart;
+            num_moved = SetFilePointer(file, new_fp.LowPart, &new_fp.HighPart, FILE_BEGIN);
+            if (num_moved == INVALID_SET_FILE_POINTER) {
+                printf("%s: error in SetFilePointer for full sorted with %d\n", __FUNCTION__, GetLastError());
+                exit(1);
+            }
+        }
+        else
+        {
+            file = CreateFile(this->full_sorted_fname, GENERIC_READ | GENERIC_WRITE,
+                FILE_SHARE_READ | FILE_SHARE_DELETE | FILE_SHARE_WRITE,
+                NULL,
+                OPEN_EXISTING,
+                FILE_ATTRIBUTE_NORMAL,
+                NULL);
+            DWORD num_moved = 0;
+            LARGE_INTEGER new_fp = { 0 };
+            new_fp.QuadPart = this->windows_fs.QuadPart;
+            num_moved = SetFilePointer(file, new_fp.LowPart, &new_fp.HighPart, FILE_BEGIN);
+            if (num_moved == INVALID_SET_FILE_POINTER) {
+                printf("%s: error in SetFilePointer for full sorted with %d\n", __FUNCTION__, GetLastError());
+                exit(1);
+            }
         }
 
         unsigned int last_val = 0;
@@ -2824,16 +2891,31 @@ int external_sort::deep_validate()
     new_fp.QuadPart = 2 * this->windows_fs.QuadPart;
     if (this->seq_run) {
         DWORD num_moved = 0;
-        num_moved = SetFilePointer(fchunk_sorted, this->windows_fs.LowPart, &this->windows_fs.HighPart, FILE_BEGIN);
-        if (num_moved == INVALID_SET_FILE_POINTER) {
-            printf("%s: error in SetFilePointer for chunk sorted with %d\n", __FUNCTION__, GetLastError());
-            exit(1);
-        }
+        if (glb_loc == FORMER) {
+            num_moved = SetFilePointer(fchunk_sorted, this->windows_fs.LowPart, &this->windows_fs.HighPart, FILE_BEGIN);
+            if (num_moved == INVALID_SET_FILE_POINTER) {
+                printf("%s: error in SetFilePointer for chunk sorted with %d\n", __FUNCTION__, GetLastError());
+                exit(1);
+            }
 
-        num_moved = SetFilePointer(fmerge_sorted, new_fp.LowPart, &new_fp.HighPart, FILE_BEGIN);
-        if (num_moved == INVALID_SET_FILE_POINTER) {
-            printf("%s: error in SetFilePointer for full sorted with %d\n", __FUNCTION__, GetLastError());
-            exit(1);
+            num_moved = SetFilePointer(fmerge_sorted, new_fp.LowPart, &new_fp.HighPart, FILE_BEGIN);
+            if (num_moved == INVALID_SET_FILE_POINTER) {
+                printf("%s: error in SetFilePointer for full sorted with %d\n", __FUNCTION__, GetLastError());
+                exit(1);
+            }
+        }
+        else {
+            num_moved = SetFilePointer(fchunk_sorted, new_fp.LowPart, &new_fp.HighPart, FILE_BEGIN);
+            if (num_moved == INVALID_SET_FILE_POINTER) {
+                printf("%s: error in SetFilePointer for chunk sorted with %d\n", __FUNCTION__, GetLastError());
+                exit(1);
+            }
+
+            num_moved = SetFilePointer(fmerge_sorted, this->windows_fs.LowPart, &this->windows_fs.HighPart, FILE_BEGIN);
+            if (num_moved == INVALID_SET_FILE_POINTER) {
+                printf("%s: error in SetFilePointer for full sorted with %d\n", __FUNCTION__, GetLastError());
+                exit(1);
+            }
         }
     }
 
